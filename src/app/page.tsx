@@ -285,27 +285,11 @@ export default function HomePage() {
                   title="Dashboard interactivo"
                   description="Interfaz intuitiva que permite a educadores visualizar alertas y realizar seguimiento a las intervenciones."
                 />
-                {/* <TechFeature
-                  title="App móvil offline"
-                  description="Funcionalidad disponible sin conexión para adaptarse a contextos con limitaciones de internet."
-                /> */}
                 <TechFeature
                   title="Privacidad y seguridad"
                   description="Protegemos los datos sensibles con cifrado de última generación y protocolos de seguridad robustos."
                 />
               </div>
-              
-              {/* <div className="mt-10">
-                <Link
-                  href="#"
-                  className="inline-flex items-center gap-2 text-[#F8F0AF] hover:text-[#FFD700] transition-colors group/tech"
-                >
-                  <span>Conocer más sobre nuestra tecnología</span>
-                  <svg className="w-4 h-4 transform group-hover/tech:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </Link>
-              </div> */}
             </div>
             
             <div className="relative">
@@ -445,19 +429,16 @@ export default function HomePage() {
               name="María González"
               role="Madre de familia"
               quote="Gracias a SIEDES, pude recibir apoyo a tiempo para que mi hijo no abandonara la escuela. Las alertas me avisaron cuando empezó a tener dificultades."
-              avatar="/avatar-mujer-1.jpg" // Reemplazar con imagen real
             />
             <Testimonial
               name="Prof. Javier Rodríguez"
               role="Docente"
               quote="La plataforma me permite identificar estudiantes en riesgo antes de que sea demasiado tarde. Las intervenciones sugeridas son muy prácticas y contextualizadas."
-              avatar="/avatar-hombre-1.jpg" // Reemplazar con imagen real
             />
             <Testimonial
               name="Ana Lucía Moreno"
               role="Estudiante, 16 años"
               quote="Me gusta que la app entiende nuestra realidad. No es solo tecnología, siento que realmente quieren ayudarnos a seguir estudiando."
-              avatar="/avatar-mujer-2.jpg" // Reemplazar con imagen real
             />
           </div>
         </div>
@@ -570,7 +551,7 @@ function ImpactMetric({ value, label }: { value: string; label: string }) {
   );
 }
 
-function Testimonial({ name, role, quote, avatar }: { name: string; role: string; quote: string; avatar: string }) {
+function Testimonial({ name, role, quote }: { name: string; role: string; quote: string }) {
   return (
     <figure className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
       <div className="flex items-center mb-4">
@@ -582,7 +563,7 @@ function Testimonial({ name, role, quote, avatar }: { name: string; role: string
           <p className="text-white/60 text-sm">{role}</p>
         </div>
       </div>
-      <blockquote className="text-white/90">"{quote}"</blockquote>
+      <blockquote className="text-white/90">&ldquo;{quote}&rdquo;</blockquote>
     </figure>
   );
 }
