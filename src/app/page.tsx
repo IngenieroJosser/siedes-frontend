@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 
-export default function HomePage() {
-  // Eliminamos el estado scrolled ya que no se utiliza
-  // const [scrolled, setScrolled] = useState(false);
-
+export default function HomePage() {;
   useEffect(() => {
-    // Este efecto ya no es necesario ya que scrolled no se usa
-    // const handleScroll = () => {
-    //   setScrolled(window.scrollY > 10);
-    // };
-    // window.addEventListener("scroll", handleScroll);
-    // return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
