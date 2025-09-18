@@ -1,20 +1,64 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+
+// Define interfaces for our data structures
+interface Alerta {
+  fecha: string;
+  tipo: string;
+  descripcion: string;
+  severidad: string;
+}
+
+interface Intervencion {
+  id: string;
+  tipo: string;
+  estado: string;
+  fechaInicio: string;
+  responsable: string;
+}
+
+interface Nota {
+  fecha: string;
+  autor: string;
+  contenido: string;
+}
+
+interface Student {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  edad: number;
+  genero: string;
+  etnia: string;
+  grado: string;
+  institucion: string;
+  direccion: string;
+  telefono: string;
+  acudiente: string;
+  telefonoAcudiente: string;
+  riesgoDesercion: number;
+  nivelRiesgo: string;
+  ultimaAlerta: string;
+  intervencionesActivas: number;
+  historialAlertas: Alerta[];
+  intervenciones: Intervencion[];
+  notas: Nota[];
+}
 
 export default function StudentDetail() {
   const params = useParams();
-  const router = useRouter();
-  const [student, setStudent] = useState<any>(null);
+  const [student, setStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("general");
   const [isHovered, setIsHovered] = useState(false);
 
-  // Datos de ejemplo
-  const mockStudent = {
-    id: params.id,
+  // Memoize mockStudent to prevent recreation on every render
+  const mockStudent = useMemo(() => ({
+    id: params.id as string,
     nombre: "Ana",
     apellido: "Moreno",
     email: "ana.moreno@ejemplo.com",
@@ -44,7 +88,7 @@ export default function StudentDetail() {
       { fecha: "2023-11-05", autor: "Psic. Laura Díaz", contenido: "Ana mostró mejoría en su participación en clase hoy." },
       { fecha: "2023-10-25", autor: "Prof. Carlos Martínez", contenido: "Se programó sesión de refuerzo para matemáticas los martes y jueves." }
     ]
-  };
+  }), [params.id]);
 
   useEffect(() => {
     // Simular carga de datos
@@ -57,7 +101,7 @@ export default function StudentDetail() {
     };
 
     loadData();
-  }, [params.id]);
+  }, [params.id, mockStudent]);
 
   const getRiskColor = (nivelRiesgo: string) => {
     switch (nivelRiesgo) {
@@ -412,7 +456,7 @@ export default function StudentDetail() {
               className={`px-6 py-4 font-medium flex items-center transition-all ${activeTab === "general" ? "text-[#F8F0AF] border-b-2 border-[#F8F0AF] bg-gradient-to-r from-[#F8F0AF]/10 to-transparent" : "text-white/60 hover:text-[#F8F0AF] hover:bg-white/5"}`}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 01118 0z" />
               </svg>
               Información General
             </button>
@@ -516,7 +560,7 @@ export default function StudentDetail() {
                 </div>
                 
                 <div className="space-y-4">
-                  {student.historialAlertas.map((alerta: any, index: number) => (
+                  {student.historialAlertas.map((alerta: Alerta, index: number) => (
                     <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -558,7 +602,7 @@ export default function StudentDetail() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {student.intervenciones.map((intervencion: any, index: number) => (
+                  {student.intervenciones.map((intervencion: Intervencion, index: number) => (
                     <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -608,7 +652,7 @@ export default function StudentDetail() {
                 </div>
                 
                 <div className="space-y-4">
-                  {student.notas.map((nota: any, index: number) => (
+                  {student.notas.map((nota: Nota, index: number) => (
                     <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
                       <div className="flex justify-between items-start mb-3">
                         <div>

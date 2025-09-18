@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+interface ChartDataItem {
+  day?: string;
+  week?: string;
+  riesgo: number;
+  intervenciones: number;
+}
+
 export default function DashboardCore() {
   const [activeModule, setActiveModule] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -98,9 +105,9 @@ export default function DashboardCore() {
   ];
 
   // Función para renderizar el gráfico simple
-  const renderMiniChart = (data: any[]) => {
+  const renderMiniChart = (data: ChartDataItem[]) => {
     const maxValue = Math.max(...data.map(item => Math.max(item.riesgo, item.intervenciones)));
-
+  
     return (
       <div className="flex items-end h-8 gap-px mt-2">
         {data.map((item, index) => (
@@ -116,7 +123,7 @@ export default function DashboardCore() {
               />
             </div>
             <span className="text-[8px] text-white/50 mt-1">
-              {'day' in item ? item.day : item.week.substring(0, 3)}
+              {item.day ? item.day : item.week?.substring(0, 3)}
             </span>
           </div>
         ))}
