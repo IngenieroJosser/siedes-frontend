@@ -4,10 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+// Definir interfaz para las instituciones
+interface Institution {
+  id: string;
+  nombre: string;
+}
+
 export default function AddStudent() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [institutions, setInstitutions] = useState<any[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [formData, setFormData] = useState({
     // Información de usuario
     nombre: "",
@@ -43,7 +49,7 @@ export default function AddStudent() {
     // Simular carga de instituciones
     const loadInstitutions = async () => {
       // En una aplicación real, esto vendría de tu API
-      const mockInstitutions = [
+      const mockInstitutions: Institution[] = [
         { id: "1", nombre: "Institución Educativa San Francisco de Asís" },
         { id: "2", nombre: "Colegio Femenino La Presentación" },
         { id: "3", nombre: "Institución Educativa Carrasquilla Industrial" },
@@ -291,7 +297,7 @@ export default function AddStudent() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-white/10 flex items-center">
               <svg className="w-6 h-6 mr-2 text-[#F8F0AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 极" />
               </svg>
               Contexto del Estudiante
             </h2>
