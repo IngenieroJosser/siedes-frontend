@@ -4,19 +4,21 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function HomePage() {
-  const [scrolled, setScrolled] = useState(false);
+  // Eliminamos el estado scrolled ya que no se utiliza
+  // const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    // Este efecto ya no es necesario ya que scrolled no se usa
+    // const handleScroll = () => {
+    //   setScrolled(window.scrollY > 10);
+    // };
+    // window.addEventListener("scroll", handleScroll);
+    // return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <div className="min-h-screen bg-[#002930] text-white">
-
+      {/* Resto del código permanece igual */}
       {/* ====== HERO MEJORADA ====== */}
       <section aria-label="Presentación" className="relative overflow-hidden">
         {/* Elementos decorativos de fondo */}

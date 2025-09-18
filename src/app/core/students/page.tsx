@@ -1,13 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+// Definir interfaces para los tipos de datos
+interface Student {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  edad: number;
+  genero: string;
+  etnia: string;
+  grado: string;
+  institucion: string;
+  riesgoDesercion: number;
+  nivelRiesgo: string;
+  ultimaAlerta: string;
+  intervencionesActivas: number;
+}
 
 export default function StudentsList() {
-  const router = useRouter();
-  const [students, setStudents] = useState<any[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [riskFilter, setRiskFilter] = useState("all");
@@ -17,7 +32,7 @@ export default function StudentsList() {
   const [itemsPerPage] = useState(10);
 
   // Datos de ejemplo (en una aplicación real, estos vendrían de una API)
-  const mockStudents = [
+  const mockStudents = useMemo(() => [
     {
       id: "1",
       nombre: "Ana",
@@ -93,7 +108,7 @@ export default function StudentsList() {
       ultimaAlerta: "Hace 5 días",
       intervencionesActivas: 1
     }
-  ];
+  ], []);
 
   const mockInstitutions = [
     "Todas las instituciones",
@@ -117,7 +132,7 @@ export default function StudentsList() {
     };
 
     loadData();
-  }, []);
+  }, [mockStudents]);
 
   useEffect(() => {
     // Aplicar filtros
@@ -265,7 +280,7 @@ export default function StudentsList() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Nombre o email..."
+                  placeholder="Nombre or email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
