@@ -223,7 +223,7 @@ export default function StudentsList() {
     <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div className="pt-18 flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
               Gestión de Estudiantes

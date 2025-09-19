@@ -97,7 +97,7 @@ export default function AddStudent() {
     <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="pt-16 flex items-center justify-between mb-8">
           <div>
             <Link 
               href="/core/students" 

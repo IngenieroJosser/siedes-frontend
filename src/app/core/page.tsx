@@ -188,7 +188,7 @@ export default function DashboardCore() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-[#00232a]/90 backdrop-blur-sm border-b border-white/10 p-4 flex items-center justify-between sticky top-0 z-20">
+        <header className="pt-20 bg-[#00232a]/90 backdrop-blur-sm border-b border-white/10 p-4 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(true)}
