@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-// Definir interfaz para las instituciones
-interface Institution {
-  id: string;
-  nombre: string;
-}
+import { Institution } from "@/lib/type";
 
 export default function AddStudent() {
   const router = useRouter();
@@ -44,23 +39,6 @@ export default function AddStudent() {
     situacionesEspeciales: "",
     necesidadesEspeciales: ""
   });
-
-  useEffect(() => {
-    // Simular carga de instituciones
-    const loadInstitutions = async () => {
-      // En una aplicación real, esto vendría de tu API
-      const mockInstitutions: Institution[] = [
-        { id: "1", nombre: "Institución Educativa San Francisco de Asís" },
-        { id: "2", nombre: "Colegio Femenino La Presentación" },
-        { id: "3", nombre: "Institución Educativa Carrasquilla Industrial" },
-        { id: "4", nombre: "Institución Educativa Normal Superior San Pedro" },
-        { id: "5", nombre: "Institución Educativa José Hilario López" }
-      ];
-      setInstitutions(mockInstitutions);
-    };
-
-    loadInstitutions();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
