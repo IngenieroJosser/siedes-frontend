@@ -9,8 +9,6 @@ export default function HomePage() {;
 
   return (
     <div className="min-h-screen bg-[#002930] text-white">
-      {/* Resto del código permanece igual */}
-      {/* ====== HERO MEJORADA ====== */}
       <section aria-label="Presentación" className="relative overflow-hidden">
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0 overflow-hidden">

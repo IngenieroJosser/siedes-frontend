@@ -1,10 +1,13 @@
 import axios, { AxiosRequestConfig, Method } from "axios";
 import { ApiErrorResponse } from "@/lib/type";
 
+// Tipo más flexible para datos de solicitud
+type RequestData = object | FormData | undefined;
+
 export const apiRequest = async <T>(
   method: Method,
   endpoint: string,
-  data?: any,
+  data?: RequestData,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   try {
@@ -48,12 +51,11 @@ export const apiRequest = async <T>(
       url: fullUrl,
       data: !isFormData && data ? JSON.stringify(data) : data,
       headers,
-      timeout: 30000, // 30 segundos de timeout
-      validateStatus: (status) => status >= 200 && status < 500, // Aceptar respuestas 4xx como no excepciones
+      timeout: 30000,
+      validateStatus: (status) => status >= 200 && status < 500,
       ...config,
     });
 
-    // Si la respuesta es un error, lanzar excepción
     if (response.status >= 400) {
       const errorData: ApiErrorResponse = {
         message: response.data?.message || `Error ${response.status}`,
@@ -74,55 +76,70 @@ export const apiRequest = async <T>(
     }
 
     return response.data as T;
-  } catch (error: any) {
-    console.error("❌ API Request Failed:", {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        data: error.config?.data,
-        headers: error.config?.headers
-      },
-      response: {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data
-      }
-    });
-
-    // Manejar errores específicos
-    if (error.response) {
-      // El servidor respondió con un código de error
-      const status = error.response.status;
-      
-      if (status === 400) {
-        throw new Error(error.response.data?.message || "Solicitud incorrecta. Verifica los datos enviados.");
-      } else if (status === 401) {
-        // No autorizado
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          // Redirigir a login solo si estamos en el cliente
-          window.location.href = "/login";
+  } catch (error: unknown) {
+    // Type guard simplificado usando AxiosError
+    if (axios.isAxiosError(error)) {
+      console.error("❌ API Request Failed:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+        },
+        response: {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
         }
-        throw new Error("No autorizado. Por favor, inicia sesión nuevamente.");
-      } else if (status === 403) {
-        throw new Error("No tienes permisos para realizar esta acción.");
-      } else if (status === 404) {
-        throw new Error("Recurso no encontrado.");
-      } else if (status >= 500) {
-        throw new Error("Error interno del servidor. Por favor, intenta más tarde.");
-      } else {
-        throw new Error(error.response.data?.message || `Error ${status}: ${error.response.statusText}`);
+      });
+
+      if (error.response) {
+        const status = error.response.status;
+        const responseData = error.response.data as { message?: string };
+        
+        if (status === 400) {
+          throw new Error(responseData?.message || "Solicitud incorrecta. Verifica los datos enviados.");
+        } else if (status === 401) {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }
+          throw new Error("No autorizado. Por favor, inicia sesión nuevamente.");
+        } else if (status === 403) {
+          throw new Error("No tienes permisos para realizar esta acción.");
+        } else if (status === 404) {
+          throw new Error("Recurso no encontrado.");
+        } else if (status >= 500) {
+          throw new Error("Error interno del servidor. Por favor, intenta más tarde.");
+        } else {
+          throw new Error(responseData?.message || `Error ${status}: ${error.response.statusText}`);
+        }
+      } else if (error.request) {
+        throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet.");
       }
-    } else if (error.request) {
-      // La solicitud fue hecha pero no se recibió respuesta
-      throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet.");
-    } else {
-      // Error al configurar la solicitud
-      throw new Error(error.message || "Error inesperado al realizar la solicitud.");
     }
+
+    // Error genérico
+    const errorMessage = error instanceof Error ? error.message : "Error inesperado al realizar la solicitud.";
+    throw new Error(errorMessage);
   }
+};
+
+// Métodos HTTP simplificados
+export const api = {
+  get: <T>(endpoint: string, config?: AxiosRequestConfig) => 
+    apiRequest<T>("GET", endpoint, undefined, config),
+  
+  post: <T>(endpoint: string, data?: RequestData, config?: AxiosRequestConfig) => 
+    apiRequest<T>("POST", endpoint, data, config),
+  
+  put: <T>(endpoint: string, data?: RequestData, config?: AxiosRequestConfig) => 
+    apiRequest<T>("PUT", endpoint, data, config),
+  
+  patch: <T>(endpoint: string, data?: RequestData, config?: AxiosRequestConfig) => 
+    apiRequest<T>("PATCH", endpoint, data, config),
+  
+  delete: <T>(endpoint: string, config?: AxiosRequestConfig) => 
+    apiRequest<T>("DELETE", endpoint, undefined, config)
 };

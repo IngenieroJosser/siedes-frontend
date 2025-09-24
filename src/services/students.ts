@@ -1,6 +1,14 @@
-import { ICreateStudent, GenericMessageResponse } from "@/lib/type";
-import { apiRequest } from "../lib/api";
+import { ICreateStudent, GenericMessageResponse, ApiRestResponse } from "@/lib/type";
+import { api } from "../lib/api";
 
 export async function createStudent(dtoStudent: ICreateStudent) {
-  return apiRequest<GenericMessageResponse>("POST", `/student-record`, dtoStudent);
+  return api.post<GenericMessageResponse>("/student-record", dtoStudent);
+}
+
+export async function getStudents() {
+  return api.get<ApiRestResponse>("/student-record");
+}
+
+export async function getStudentById(id: string) {
+  return api.get<ApiRestResponse>(`/student-record/${id}`);
 }

@@ -5,14 +5,13 @@ export interface ApiErrorResponse {
   details?: any;
 }
 
-enum Etnia {
-  AFRODESCENDIENTE,   // Afrocolombiano(a)
-  INDIGENA,           // Pueblos indígenas
-  ROM,                // Pueblo gitano (ROM)
-  RAIZAL,             // Raizal del Archipiélago de San Andrés
-  PALENQUERO,         // San Basilio de Palenque
-  NINGUNA,            // No se autorreconoce en grupo étnico
-}
+export type Etnia = 
+  | "NINGUNA" 
+  | "AFRODESCENDIENTE" 
+  | "INDIGENA" 
+  | "ROM" 
+  | "RAIZAL" 
+  | "PALENQUERO";
 
 export interface ICreateStudent {
   nombre: string;
@@ -44,4 +43,14 @@ export interface ICreateStudent {
 
 export interface GenericMessageResponse {
   message: string;
+}
+
+export interface Institution {
+  id: string;
+  nombre: string;
+}
+
+export interface ApiRestResponse {
+  message: string;
+  data: any;
 }
