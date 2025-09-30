@@ -138,26 +138,217 @@ export default function SolicitaAyuda() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-[#002930] text-white flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-gradient-to-b from-[#00343d] to-[#002029] rounded-2xl border border-white/10 p-8 shadow-2xl shadow-black/30">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="min-h-screen bg-gradient-to-br from-[#002930] via-[#00343d] to-[#001c22] text-white overflow-hidden">
+        {/* Elementos de fondo animados */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Burbujas flotantes */}
+          <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-[#F8F0AF]/20 rounded-full animate-float-slow"></div>
+          <div className="absolute top-1/3 right-1/3 w-8 h-8 bg-[#AC4A00]/20 rounded-full animate-float-medium"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-12 h-12 bg-[#F8F0AF]/10 rounded-full animate-float-slow"></div>
+          <div className="absolute top-1/2 right-1/4 w-10 h-10 bg-[#AC4A00]/15 rounded-full animate-float-fast"></div>
+          <div className="absolute bottom-1/3 left-1/4 w-7 h-7 bg-[#F8F0AF]/15 rounded-full animate-float-medium"></div>
+          
+          {/* Ondas sutiles */}
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-gradient-to-r from-[#F8F0AF]/5 to-[#AC4A00]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-gradient-to-l from-[#F8F0AF]/5 to-[#AC4A00]/5 rounded-full blur-3xl animate-pulse-medium"></div>
+        </div>
+  
+        <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
+          <div className="max-w-lg w-full mx-auto text-center">
+            {/* Tarjeta principal con efecto glassmorphism */}
+            <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-12 shadow-2xl shadow-black/20 transform transition-all duration-700 hover:scale-[1.02]">
+              
+              {/* Efectos de brillo */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-[#F8F0AF] to-transparent"></div>
+              <div className="absolute -top-4 -right-4 w-8 h-8 bg-[#F8F0AF] rounded-full blur-md opacity-60"></div>
+              <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-[#AC4A00] rounded-full blur-md opacity-40"></div>
+  
+              {/* Icono de éxito animado */}
+              <div className="relative mb-8">
+                <div className="w-32 h-32 mx-auto relative">
+                  {/* Círculo de fondo animado */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#F8F0AF] to-[#AC4A00] rounded-full opacity-20 animate-ping-slow"></div>
+                  
+                  {/* Círculo principal */}
+                  <div className="absolute inset-4 bg-gradient-to-br from-[#F8F0AF] to-[#D45A10] rounded-full flex items-center justify-center shadow-lg shadow-[#F8F0AF]/20">
+                    
+                    {/* Checkmark animado */}
+                    <svg 
+                      className="w-16 h-16 text-white drop-shadow-lg" 
+                      viewBox="0 0 24 24"
+                      style={{
+                        filter: "drop-shadow(0 4px 8px rgba(248, 240, 175, 0.3))"
+                      }}
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+                        className="animate-draw-check"
+                        style={{
+                          strokeDasharray: 24,
+                          strokeDashoffset: 24,
+                          animation: "drawCheck 0.8s ease-in-out 0.3s forwards"
+                        }}
+                      />
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Partículas de celebración */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`absolute w-2 h-2 bg-[#F8F0AF] rounded-full animate-celebrate`}
+                      style={{
+                        top: `${30 + Math.random() * 40}%`,
+                        left: `${20 + Math.random() * 60}%`,
+                        animationDelay: `${i * 0.2}s`,
+                        opacity: 0
+                      }}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+  
+              {/* Contenido de texto */}
+              <div className="space-y-6 mb-8">
+                <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#F8F0AF] via-[#D45A10] to-[#F8F0AF] bg-clip-text text-transparent animate-gradient-x">
+                  ¡Solicitud Enviada!
+                </h2>
+                
+                <div className="space-y-4">
+                  <p className="text-xl text-white/90 leading-relaxed">
+                    Hola <strong className="text-[#D45A10]">{formData.nombre}</strong>, Hemos recibido tu solicitud de ayuda y estamos comprometidos contigo
+                  </p>
+                  
+                  <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-white/80 text-sm">Equipo de apoyo activo</span>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-white/10">
+                    <p className="text-white/70 text-lg">
+                      Nos pondremos en contacto contigo en las próximas <span className="text-[#F8F0AF] font-semibold">24-48 horas</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+  
+              {/* Botón de acción */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                
+                <button
+                  onClick={() => window.location.href = '/'}
+                  className="relative w-full inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#D45A10] px-8 py-4 font-semibold text-white shadow-2xl shadow-[#AC4A00]/30 hover:shadow-[#AC4A00]/50 transition-all duration-300 group-hover:scale-105 group-hover:from-[#D45A10] group-hover:to-[#AC4A00]"
+                >
+                  <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Volver al Inicio
+                  <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+  
+              {/* Información adicional */}
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-white/60">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Respuesta rápida garantizada
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Apoyo confidencial
+                  </div>
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold mb-2">¡Solicitud Enviada!</h2>
-            <p className="text-white/80 mb-6">
-              Hemos recibido tu solicitud de ayuda. Nos pondremos en contacto contigo a la brevedad.
-            </p>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#D45A10] px-6 py-3 font-medium text-white shadow-lg shadow-[#AC4A00]/30 hover:shadow-xl transition-all"
-            >
-              Volver al inicio
-            </button>
+  
+            {/* Mensaje inspirador */}
+            <div className="mt-8 opacity-60 hover:opacity-100 transition-opacity duration-500">
+              <p className="text-white/50 italic text-sm">
+                "Cada estudiante merece la oportunidad de brillar. Estamos aquí para asegurarnos de que nada se interponga en tu camino"
+              </p>
+            </div>
           </div>
         </div>
+  
+        {/* Estilos de animación personalizados */}
+        <style jsx>{`
+          @keyframes drawCheck {
+            to {
+              stroke-dashoffset: 0;
+            }
+          }
+          
+          @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+          }
+          
+          @keyframes float-medium {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-15px) scale(1.1); }
+          }
+          
+          @keyframes float-fast {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(90deg); }
+          }
+          
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+          }
+          
+          @keyframes pulse-medium {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.05); }
+          }
+          
+          @keyframes celebrate {
+            0% { transform: translateY(0) scale(0); opacity: 1; }
+            50% { transform: translateY(-20px) scale(1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(0); opacity: 0; }
+          }
+          
+          @keyframes gradient-x {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+          
+          @keyframes tilt {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(0.5deg); }
+            75% { transform: rotate(-0.5deg); }
+          }
+  
+          .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+          .animate-float-medium { animation: float-medium 4s ease-in-out infinite; }
+          .animate-float-fast { animation: float-fast 3s ease-in-out infinite; }
+          .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+          .animate-pulse-medium { animation: pulse-medium 3s ease-in-out infinite; }
+          .animate-celebrate { animation: celebrate 2s ease-out forwards; }
+          .animate-gradient-x { 
+            background-size: 200% 200%;
+            animation: gradient-x 3s ease infinite; 
+          }
+          .animate-tilt { animation: tilt 10s linear infinite; }
+          .animate-draw-check { 
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          }
+        `}</style>
       </div>
     );
   }
