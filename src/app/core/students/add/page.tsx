@@ -43,24 +43,12 @@ export default function AddStudent() {
     necesidadesEspeciales: ""
   });
 
-  // Cargar instituciones al montar el componente
+  // Cargar instituciones al montar el componente - CORREGIDO
   useEffect(() => {
     const loadInstitutions = async () => {
       try {
         setIsLoadingInstitutions(true);
-        const response = await getInstitutions();
-        
-        // Manejar diferentes formatos de respuesta
-        let institutionsData: Institution[] = [];
-        
-        if (Array.isArray(response)) {
-          // Si la respuesta es directamente un array
-          institutionsData = response;
-        } else if (response && typeof response === 'object' && 'data' in response) {
-          // Si la respuesta tiene propiedad data
-          institutionsData = Array.isArray(response.data) ? response.data : [];
-        }
-        
+        const institutionsData = await getInstitutions();
         setInstitutions(institutionsData);
       } catch (error) {
         console.error("Error cargando instituciones:", error);
