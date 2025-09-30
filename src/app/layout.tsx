@@ -60,7 +60,9 @@ export default function RootLayout({
     <html lang="es" className={`${dmMono.variable}`}>
       <body className="antialiased bg-[#F8F0AF] text-[#00343d] flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow">{children}</main>
+        <main className="flex-grow">
+          {children}
+          </main>
         <Footer />
       </body>
     </html>
