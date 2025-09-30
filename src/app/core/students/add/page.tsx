@@ -3,9 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Institution, ICreateStudent } from "@/lib/type";
+import { Institution, ICreateStudent, Etnia } from "@/lib/type";
 import { getInstitutions } from "@/services/institution";
 import { createStudent } from "@/services/students";
+
+// Type guard para verificar si es un error de Axios
+function isAxiosError(error: unknown): error is { response?: { data?: { message?: string } } } {
+  return typeof error === 'object' && error !== null && 'response' in error;
+}
 
 export default function AddStudent() {
   const router = useRouter();
@@ -89,7 +94,7 @@ export default function AddStudent() {
         // Información de estudiante
         edad: parseInt(formData.edad) || 0,
         genero: formData.genero,
-        etnia: formData.etnia as any,
+        etnia: formData.etnia as Etnia, // CORREGIDO: usar Etnia en lugar de any
         grado: formData.grado,
         institucionId: formData.institucionId,
         
@@ -123,9 +128,17 @@ export default function AddStudent() {
       } else {
         throw new Error("Respuesta inesperada del servidor");
       }
-    } catch (error: any) {
+    } catch (error) { // CORREGIDO: eliminar el tipo any
       console.error("Error al agregar estudiante:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Error al agregar estudiante. Por favor, intenta nuevamente.";
+      
+      let errorMessage = "Error al agregar estudiante. Por favor, intenta nuevamente.";
+      
+      if (isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
