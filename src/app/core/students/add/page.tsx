@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Institution } from "@/lib/type";
+import { Institution, ICreateStudent } from "@/lib/type";
+import { getInstitutions } from "@/services/institution";
+import { createStudent } from "@/services/students";
 
 export default function AddStudent() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(true);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [formData, setFormData] = useState({
     // Información de usuario
@@ -40,6 +43,37 @@ export default function AddStudent() {
     necesidadesEspeciales: ""
   });
 
+  // Cargar instituciones al montar el componente
+  useEffect(() => {
+    const loadInstitutions = async () => {
+      try {
+        setIsLoadingInstitutions(true);
+        const response = await getInstitutions();
+        
+        // Manejar diferentes formatos de respuesta
+        let institutionsData: Institution[] = [];
+        
+        if (Array.isArray(response)) {
+          // Si la respuesta es directamente un array
+          institutionsData = response;
+        } else if (response && typeof response === 'object' && 'data' in response) {
+          // Si la respuesta tiene propiedad data
+          institutionsData = Array.isArray(response.data) ? response.data : [];
+        }
+        
+        setInstitutions(institutionsData);
+      } catch (error) {
+        console.error("Error cargando instituciones:", error);
+        alert("Error al cargar las instituciones");
+        setInstitutions([]);
+      } finally {
+        setIsLoadingInstitutions(false);
+      }
+    };
+
+    loadInstitutions();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -55,19 +89,58 @@ export default function AddStudent() {
     setIsSubmitting(true);
     
     try {
-      // En una aplicación real, enviarías los datos a tu API
-      console.log("Datos del estudiante:", formData);
+      // Convertir los campos numéricos a números y preparar datos para la API
+      const studentData: ICreateStudent = {
+        // Información de usuario
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        email: formData.email,
+        telefono: formData.telefono || undefined,
+        password: formData.password,
+        
+        // Información de estudiante
+        edad: parseInt(formData.edad) || 0,
+        genero: formData.genero,
+        etnia: formData.etnia as any,
+        grado: formData.grado,
+        institucionId: formData.institucionId,
+        
+        // Campos requeridos con valores por defecto
+        usuarioId: "temp-user-id", // Esto debería generarse en el backend
+        riesgoDesercion: 0, // Valor por defecto
+        
+        // Contexto del estudiante
+        distanciaEscuela: parseFloat(formData.distanciaEscuela) || 0,
+        tiempoDesplazamiento: parseInt(formData.tiempoDesplazamiento) || 0,
+        trabaja: formData.trabaja,
+        horasTrabajo: formData.trabaja && formData.horasTrabajo ? parseInt(formData.horasTrabajo) : undefined,
+        ingresosFamiliares: formData.ingresosFamiliares ? parseInt(formData.ingresosFamiliares) : undefined,
+        personasHogar: parseInt(formData.personasHogar) || 1,
+        apoyoFamiliar: formData.apoyoFamiliar,
+        accesoInternet: formData.accesoInternet,
+        dispositivoElectronico: formData.dispositivoElectronico,
+        participacionComunitaria: formData.participacionComunitaria,
+        conocimientosAncestrales: formData.conocimientosAncestrales,
+        situacionesEspeciales: formData.situacionesEspeciales || undefined,
+        necesidadesEspeciales: formData.necesidadesEspeciales || undefined
+      };
+
+      // Enviar datos a la API
+      const response = await createStudent(studentData);
       
-      // Simular envío exitoso
-      setTimeout(() => {
-        setIsSubmitting(false);
+      // Verificar si la creación fue exitosa
+      if (response) {
         alert("Estudiante agregado exitosamente");
         router.push("/core/students");
-      }, 1500);
-    } catch (error) {
+      } else {
+        throw new Error("Respuesta inesperada del servidor");
+      }
+    } catch (error: any) {
       console.error("Error al agregar estudiante:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Error al agregar estudiante. Por favor, intenta nuevamente.";
+      alert(errorMessage);
+    } finally {
       setIsSubmitting(false);
-      alert("Error al agregar estudiante. Por favor, intenta nuevamente.");
     }
   };
 
@@ -258,15 +331,21 @@ export default function AddStudent() {
                   value={formData.institucionId}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
+                  disabled={isLoadingInstitutions}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all disabled:opacity-50"
                 >
-                  <option value="">Seleccione una institución</option>
+                  <option value="">
+                    {isLoadingInstitutions ? "Cargando instituciones..." : "Seleccione una institución"}
+                  </option>
                   {institutions.map(institution => (
                     <option key={institution.id} value={institution.id}>
                       {institution.nombre}
                     </option>
                   ))}
                 </select>
+                {!isLoadingInstitutions && institutions.length === 0 && (
+                  <p className="text-sm text-red-400 mt-2">No se pudieron cargar las instituciones</p>
+                )}
               </div>
             </div>
           </div>
@@ -275,7 +354,7 @@ export default function AddStudent() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-white/10 flex items-center">
               <svg className="w-6 h-6 mr-2 text-[#F8F0AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 极" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               Contexto del Estudiante
             </h2>
