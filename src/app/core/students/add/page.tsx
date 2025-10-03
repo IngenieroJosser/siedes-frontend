@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Institution, ICreateStudent, Etnia } from "@/lib/type";
+import { Institution, CreateCompleteStudent } from "@/lib/type";
 import { getInstitutions } from "@/services/institution";
 import { createStudent } from "@/services/students";
 
 // Type guard para verificar si es un error de Axios
-function isAxiosError(error: unknown): error is { response?: { data?: { message?: string } } } {
+function isAxiosError(error: unknown): error is { response?: { data?: { message?: string }, status?: number } } {
   return typeof error === 'object' && error !== null && 'response' in error;
 }
 
@@ -17,6 +17,14 @@ export default function AddStudent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(true);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  
+  // Estados para notificaciones
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+    details?: string;
+  }>({ type: null, message: '' });
+
   const [formData, setFormData] = useState({
     // Información de usuario
     nombre: "",
@@ -48,7 +56,7 @@ export default function AddStudent() {
     necesidadesEspeciales: ""
   });
 
-  // Cargar instituciones al montar el componente - CORREGIDO
+  // Cargar instituciones al montar el componente
   useEffect(() => {
     const loadInstitutions = async () => {
       try {
@@ -57,7 +65,7 @@ export default function AddStudent() {
         setInstitutions(institutionsData);
       } catch (error) {
         console.error("Error cargando instituciones:", error);
-        alert("Error al cargar las instituciones");
+        showNotification('error', 'Error al cargar las instituciones', 'No se pudieron cargar las instituciones educativas. Por favor, recarga la página.');
         setInstitutions([]);
       } finally {
         setIsLoadingInstitutions(false);
@@ -66,6 +74,22 @@ export default function AddStudent() {
 
     loadInstitutions();
   }, []);
+
+  // Función para mostrar notificaciones
+  const showNotification = (type: 'success' | 'error', message: string, details?: string) => {
+    setNotification({ type, message, details });
+    
+    // Auto-ocultar después de 5 segundos para éxito, 8 segundos para error
+    const timeout = type === 'success' ? 5000 : 8000;
+    setTimeout(() => {
+      setNotification({ type: null, message: '' });
+    }, timeout);
+  };
+
+  // Función para cerrar notificación manualmente
+  const closeNotification = () => {
+    setNotification({ type: null, message: '' });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -82,40 +106,38 @@ export default function AddStudent() {
     setIsSubmitting(true);
     
     try {
-      // Convertir los campos numéricos a números y preparar datos para la API
-      const studentData: ICreateStudent = {
-        // Información de usuario
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        email: formData.email,
-        telefono: formData.telefono || undefined,
-        password: formData.password,
-        
-        // Información de estudiante
-        edad: parseInt(formData.edad) || 0,
-        genero: formData.genero,
-        etnia: formData.etnia as Etnia, // CORREGIDO: usar Etnia en lugar de any
-        grado: formData.grado,
-        institucionId: formData.institucionId,
-        
-        // Campos requeridos con valores por defecto
-        usuarioId: "temp-user-id", // Esto debería generarse en el backend
-        riesgoDesercion: 0, // Valor por defecto
-        
-        // Contexto del estudiante
-        distanciaEscuela: parseFloat(formData.distanciaEscuela) || 0,
-        tiempoDesplazamiento: parseInt(formData.tiempoDesplazamiento) || 0,
-        trabaja: formData.trabaja,
-        horasTrabajo: formData.trabaja && formData.horasTrabajo ? parseInt(formData.horasTrabajo) : undefined,
-        ingresosFamiliares: formData.ingresosFamiliares ? parseInt(formData.ingresosFamiliares) : undefined,
-        personasHogar: parseInt(formData.personasHogar) || 1,
-        apoyoFamiliar: formData.apoyoFamiliar,
-        accesoInternet: formData.accesoInternet,
-        dispositivoElectronico: formData.dispositivoElectronico,
-        participacionComunitaria: formData.participacionComunitaria,
-        conocimientosAncestrales: formData.conocimientosAncestrales,
-        situacionesEspeciales: formData.situacionesEspeciales || undefined,
-        necesidadesEspeciales: formData.necesidadesEspeciales || undefined
+      // Preparar datos en la estructura que espera el backend
+      const studentData: CreateCompleteStudent = {
+        usuario: {
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          email: formData.email,
+          telefono: formData.telefono || undefined,
+          password: formData.password,
+        },
+        estudiante: {
+          edad: parseInt(formData.edad) || 0,
+          genero: formData.genero,
+          etnia: formData.etnia,
+          grado: formData.grado,
+          institucionId: formData.institucionId,
+          riesgoDesercion: 0, // El backend lo calculará
+        },
+        contexto: {
+          distanciaEscuela: parseFloat(formData.distanciaEscuela) || 0,
+          tiempoDesplazamiento: parseInt(formData.tiempoDesplazamiento) || 0,
+          trabaja: formData.trabaja,
+          horasTrabajo: formData.trabaja && formData.horasTrabajo ? parseInt(formData.horasTrabajo) : undefined,
+          ingresosFamiliares: formData.ingresosFamiliares ? parseInt(formData.ingresosFamiliares) : undefined,
+          personasHogar: parseInt(formData.personasHogar) || 1,
+          apoyoFamiliar: formData.apoyoFamiliar,
+          accesoInternet: formData.accesoInternet,
+          dispositivoElectronico: formData.dispositivoElectronico,
+          participacionComunitaria: formData.participacionComunitaria,
+          conocimientosAncestrales: formData.conocimientosAncestrales,
+          situacionesEspeciales: formData.situacionesEspeciales || undefined,
+          necesidadesEspeciales: formData.necesidadesEspeciales || undefined,
+        }
       };
 
       // Enviar datos a la API
@@ -123,23 +145,70 @@ export default function AddStudent() {
       
       // Verificar si la creación fue exitosa
       if (response) {
-        alert("Estudiante agregado exitosamente");
-        router.push("/core/students");
+        showNotification(
+          'success', 
+          '¡Estudiante creado exitosamente!', 
+          'El estudiante ha sido registrado en el sistema y se ha calculado su riesgo de deserción inicial.'
+        );
+        
+        // Limpiar formulario después de éxito
+        setFormData({
+          nombre: "",
+          apellido: "",
+          email: "",
+          telefono: "",
+          password: "",
+          edad: "",
+          genero: "",
+          etnia: "NINGUNA",
+          grado: "",
+          institucionId: "",
+          distanciaEscuela: "",
+          tiempoDesplazamiento: "",
+          trabaja: false,
+          horasTrabajo: "",
+          ingresosFamiliares: "",
+          personasHogar: "",
+          apoyoFamiliar: true,
+          accesoInternet: false,
+          dispositivoElectronico: false,
+          participacionComunitaria: false,
+          conocimientosAncestrales: false,
+          situacionesEspeciales: "",
+          necesidadesEspeciales: ""
+        });
+
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          router.push("/core/students");
+        }, 3000);
       } else {
         throw new Error("Respuesta inesperada del servidor");
       }
-    } catch (error) { // CORREGIDO: eliminar el tipo any
+    } catch (error) {
       console.error("Error al agregar estudiante:", error);
       
       let errorMessage = "Error al agregar estudiante. Por favor, intenta nuevamente.";
+      let errorDetails = "Ha ocurrido un error inesperado durante el registro.";
       
       if (isAxiosError(error)) {
         errorMessage = error.response?.data?.message || errorMessage;
+        
+        // Detalles específicos basados en el tipo de error
+        if (error.response?.status === 409) {
+          errorDetails = "El correo electrónico ya está registrado en el sistema. Por favor, utiliza otro correo.";
+        } else if (error.response?.status === 404) {
+          errorDetails = "La institución educativa seleccionada no existe o no está disponible.";
+        } else if (error.response?.status === 400) {
+          errorDetails = "Faltan campos requeridos o hay datos inválidos en el formulario.";
+        } else if (error.response?.status === 500) {
+          errorDetails = "Error interno del servidor. Por favor, contacta al administrador del sistema.";
+        }
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
+      showNotification('error', errorMessage, errorDetails);
     } finally {
       setIsSubmitting(false);
     }
@@ -148,6 +217,88 @@ export default function AddStudent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6">
       <div className="max-w-6xl mx-auto">
+        
+        {/* Notificaciones */}
+        {notification.type && (
+          <div className={`fixed top-4 right-4 z-50 max-w-md w-full ${
+            notification.type === 'success' 
+              ? 'bg-green-500/20 border-green-500' 
+              : 'bg-red-500/20 border-red-500'
+          } border rounded-2xl backdrop-blur-sm p-6 shadow-2xl transform transition-all duration-300 animate-in slide-in-from-right-full`}>
+            <div className="flex items-start">
+              <div className={`flex-shrink-0 ${
+                notification.type === 'success' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-4 flex-1">
+                <h3 className={`text-lg font-semibold ${
+                  notification.type === 'success' ? 'text-green-100' : 'text-red-100'
+                }`}>
+                  {notification.message}
+                </h3>
+                {notification.details && (
+                  <p className={`mt-2 text-sm ${
+                    notification.type === 'success' ? 'text-green-200' : 'text-red-200'
+                  }`}>
+                    {notification.details}
+                  </p>
+                )}
+                {notification.type === 'success' && (
+                  <div className="mt-4 flex items-center text-sm text-green-200">
+                    <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Redirigiendo a la lista de estudiantes...
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={closeNotification}
+                className={`flex-shrink-0 ml-4 ${
+                  notification.type === 'success' 
+                    ? 'text-green-300 hover:text-green-100' 
+                    : 'text-red-300 hover:text-red-100'
+                } transition-colors`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Progress bar para notificaciones */}
+            <div className={`mt-4 h-1 rounded-full ${
+              notification.type === 'success' ? 'bg-green-400' : 'bg-red-400'
+            }`}>
+              <div 
+                className={`h-full rounded-full ${
+                  notification.type === 'success' ? 'bg-green-200' : 'bg-red-200'
+                } transition-all duration-5000 ease-linear`}
+                style={{ 
+                  width: '100%',
+                  animation: `shrink ${notification.type === 'success' ? '5s' : '8s'} linear forwards` 
+                }}
+              />
+            </div>
+            
+            <style jsx>{`
+              @keyframes shrink {
+                from { width: 100%; }
+                to { width: 0%; }
+              }
+            `}</style>
+          </div>
+        )}
+
         {/* Header */}
         <div className="pt-16 flex items-center justify-between mb-8">
           <div>
@@ -554,9 +705,18 @@ export default function AddStudent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              {isSubmitting ? "Guardando..." : "Agregar Estudiante"}
+              {isSubmitting ? (
+                <>
+                  <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m12.728 0l-2.828-2.828M7.464 6.464L4.636 3.636" />
+                  </svg>
+                  Procesando...
+                </>
+              ) : (
+                "Agregar Estudiante"
+              )}
             </button>
           </div>
         </form>

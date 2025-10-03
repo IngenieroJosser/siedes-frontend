@@ -13,34 +13,6 @@ export type Etnia =
   | "RAIZAL"
   | "PALENQUERO";
 
-export interface ICreateStudent {
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono?: string;
-  password: string;
-  usuarioId?: string;
-  edad: number;
-  genero: string;
-  etnia: Etnia;
-  grado: string;
-  riesgoDesercion?: number;
-  institucionId: string;
-  distanciaEscuela: number;
-  tiempoDesplazamiento: number;
-  trabaja: boolean;
-  horasTrabajo?: number;
-  ingresosFamiliares?: number;
-  personasHogar: number;
-  apoyoFamiliar: boolean;
-  accesoInternet: boolean;
-  dispositivoElectronico: boolean;
-  participacionComunitaria: boolean;
-  conocimientosAncestrales: boolean;
-  situacionesEspeciales?: string;
-  necesidadesEspeciales?: string;
-}
-
 export interface GenericMessageResponse<T = Record<string, unknown>> {
   message: string;
   success: boolean;
@@ -186,5 +158,38 @@ export interface QuickHelpRequest {
     nombre: string;
     email: string;
     telefono?: string;
+  };
+}
+
+export interface CreateCompleteStudent {
+  usuario: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    telefono?: string;
+    password: string;
+  };
+  estudiante: {
+    edad: number;
+    genero: string;
+    etnia: string;
+    grado: string;
+    institucionId: string;
+    riesgoDesercion: number;
+  };
+  contexto: {
+    distanciaEscuela: number;
+    tiempoDesplazamiento: number;
+    trabaja: boolean;
+    horasTrabajo?: number;
+    ingresosFamiliares?: number;
+    personasHogar: number;
+    apoyoFamiliar: boolean;
+    accesoInternet: boolean;
+    dispositivoElectronico: boolean;
+    participacionComunitaria: boolean;
+    conocimientosAncestrales: boolean;
+    situacionesEspeciales?: string;
+    necesidadesEspeciales?: string;
   };
 }
