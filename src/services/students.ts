@@ -8,3 +8,19 @@ export async function getStudentsByInstitution(institutionId: string): Promise<S
 export async function createStudent(dtoStudent: CreateCompleteStudent) {
   return api.post<GenericMessageResponse>("/students/student-record", dtoStudent);
 }
+
+export async function getStudents(): Promise<Student[]> {
+  return await api.get<Student[]>(`/students`);
+}
+
+export async function getStudentById(id: string): Promise<Student> {
+  return await api.get<Student>(`/students/${id}`);
+}
+
+export async function updateStudent(id: string, dtoStudent: CreateCompleteStudent) {
+  return api.put<GenericMessageResponse>(`/students/${id}`, dtoStudent);
+}
+
+export async function deleteStudent(id: string) {
+  return api.delete<GenericMessageResponse>(`/students/${id}`);
+}

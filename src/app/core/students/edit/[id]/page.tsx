@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { updateStudent, getStudentById } from "@/services/students";
+import { CreateCompleteStudent, Student } from "@/lib/type";
 
-// Reutilizamos las mismas interfaces
+// Interfaces para datos auxiliares del frontend
 interface Alerta {
   fecha: string;
   tipo: string;
@@ -26,110 +28,168 @@ interface Nota {
   contenido: string;
 }
 
-interface Student {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  edad: number;
-  genero: string;
-  etnia: string;
-  grado: string;
-  institucion: string;
-  direccion: string;
-  telefono: string;
-  acudiente: string;
-  telefonoAcudiente: string;
-  riesgoDesercion: number;
-  nivelRiesgo: string;
-  ultimaAlerta: string;
-  intervencionesActivas: number;
-  historialAlertas: Alerta[];
-  intervenciones: Intervencion[];
-  notas: Nota[];
+// Extender la interfaz Student para incluir campos del frontend
+interface StudentWithFrontendData extends Student {
+  // Campos adicionales para el frontend
+  nivelRiesgo?: string;
+  ultimaAlerta?: string;
+  intervencionesActivas?: number;
+  historialAlertas?: Alerta[];
+  intervenciones?: Intervencion[];
+  notas?: Nota[];
+  // Campos de contacto adicionales
+  direccion?: string;
+  telefono?: string;
+  acudiente?: string;
+  telefonoAcudiente?: string;
 }
 
 export default function EditStudentPage() {
   const params = useParams();
   const router = useRouter();
-  const [student, setStudent] = useState<Student | null>(null);
+  const [student, setStudent] = useState<StudentWithFrontendData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Memoize mockStudent to prevent recreation on every render
-  const mockStudent = useMemo(() => ({
-    id: params.id as string,
-    nombre: "Ana",
-    apellido: "Moreno",
-    email: "ana.moreno@ejemplo.com",
-    edad: 15,
-    genero: "FEMENINO",
-    etnia: "AFRODESCENDIENTE",
-    grado: "9°",
-    institucion: "Institución Educativa San Francisco de Asís",
-    direccion: "Calle 45 # 12-34, Barrio El Centro",
-    telefono: "+57 312 456 7890",
-    acudiente: "María Moreno",
-    telefonoAcudiente: "+57 310 123 4567",
-    riesgoDesercion: 0.85,
-    nivelRiesgo: "ALTO",
-    ultimaAlerta: "Hace 2 días",
-    intervencionesActivas: 2,
-    historialAlertas: [
-      { fecha: "2023-10-15", tipo: "Asistencia", descripcion: "Falta injustificada por 3 días consecutivos", severidad: "ALTA" },
-      { fecha: "2023-09-28", tipo: "Académica", descripcion: "Bajo rendimiento en matemáticas", severidad: "MEDIA" },
-      { fecha: "2023-08-10", tipo: "Comportamiento", descripcion: "Aislamiento en actividades grupales", severidad: "MEDIA" }
-    ],
-    intervenciones: [
-      { id: "1", tipo: "Refuerzo académico", estado: "ACTIVA", fechaInicio: "2023-10-20", responsable: "Prof. Carlos Martínez" },
-      { id: "2", tipo: "Acompañamiento psicológico", estado: "ACTIVA", fechaInicio: "2023-10-18", responsable: "Psic. Laura Díaz" }
-    ],
-    notas: [
-      { fecha: "2023-11-05", autor: "Psic. Laura Díaz", contenido: "Ana mostró mejoría en su participación en clase hoy." },
-      { fecha: "2023-10-25", autor: "Prof. Carlos Martínez", contenido: "Se programó sesión de refuerzo para matemáticas los martes y jueves." }
-    ]
-  }), [params.id]);
-
+  // Cargar datos del estudiante dinámicamente
   useEffect(() => {
-    // Simular carga de datos
-    const loadData = async () => {
-      setIsLoading(true);
-      setTimeout(() => {
-        setStudent(mockStudent);
+    const loadStudentData = async () => {
+      if (!params.id) {
+        setError("ID de estudiante no válido");
         setIsLoading(false);
-      }, 800);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const studentData = await getStudentById(params.id as string);
+        
+        // Mapear los datos del backend al formato del frontend
+        const mappedStudent: StudentWithFrontendData = {
+          ...studentData,
+          // Campos del frontend que no vienen del backend
+          nivelRiesgo: studentData.riesgoDesercion > 0.7 ? "ALTO" : 
+                      studentData.riesgoDesercion > 0.4 ? "MEDIO" : "BAJO",
+          intervencionesActivas: 0, // Esto deberías obtenerlo de tu backend
+          historialAlertas: [],
+          intervenciones: [],
+          notas: [],
+          direccion: studentData.contexto?.situacionesEspeciales || "",
+          telefono: studentData.usuario.telefono || "",
+          acudiente: "", // Este campo no existe en el backend
+          telefonoAcudiente: "", // Este campo no existe en el backend
+        };
+        
+        setStudent(mappedStudent);
+      } catch (err: any) {
+        console.error('Error loading student:', err);
+        const errorMessage = err.response?.data?.message || 'No se pudo cargar la información del estudiante';
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadData();
-  }, [params.id, mockStudent]);
+    loadStudentData();
+  }, [params.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (!student) return;
     
     const { name, value } = e.target;
-    setStudent({
-      ...student,
-      [name]: value
-    });
+    
+    // Manejar campos anidados
+    if (name.startsWith('usuario.')) {
+      const field = name.split('.')[1];
+      setStudent({
+        ...student,
+        usuario: {
+          ...student.usuario,
+          [field]: value
+        }
+      });
+    } else if (name.startsWith('contexto.')) {
+      const field = name.split('.')[1];
+      setStudent({
+        ...student,
+        contexto: {
+          ...student.contexto,
+          [field]: value
+        }
+      });
+    } else {
+      // Campos directos del estudiante
+      setStudent({
+        ...student,
+        [name]: name === 'edad' || name === 'riesgoDesercion' ? parseInt(value) || 0 : value
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!student) return;
+
     setIsSaving(true);
-    
-    // Simular guardado
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Preparar los datos para enviar según la estructura que espera el backend
+      const studentToUpdate: CreateCompleteStudent = {
+        usuario: {
+          nombre: student.usuario.nombre,
+          apellido: student.usuario.apellido,
+          email: student.usuario.email,
+          telefono: student.usuario.telefono,
+          password: "temporaryPassword123" // Necesitas manejar las contraseñas de forma segura
+        },
+        estudiante: {
+          edad: student.edad,
+          genero: student.genero,
+          etnia: student.etnia,
+          grado: student.grado || "",
+          institucionId: student.institucionId,
+          riesgoDesercion: student.riesgoDesercion,
+        },
+        contexto: student.contexto || {
+          distanciaEscuela: 0,
+          tiempoDesplazamiento: 0,
+          trabaja: false,
+          personasHogar: 0,
+          apoyoFamiliar: false,
+          accesoInternet: false,
+          dispositivoElectronico: false,
+          participacionComunitaria: false,
+          conocimientosAncestrales: false,
+          situacionesEspeciales: student.direccion || "",
+          necesidadesEspeciales: ""
+        }
+      };
+
+      await updateStudent(student.id, studentToUpdate);
+      
+      // Redirigir a la página de detalles después de guardar
+      router.push(`/core/students/${student.id}`);
+      router.refresh();
+      
+    } catch (err: any) {
+      console.error('Error updating student:', err);
+      const errorMessage = err.response?.data?.message || 'Error al guardar los cambios. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+    } finally {
       setIsSaving(false);
-      router.push(`/core/students/${student?.id}`);
-    }, 1500);
+    }
   };
 
   const handleCancel = () => {
     router.push(`/core/students/${student?.id}`);
   };
 
-  const getRiskColor = (nivelRiesgo: string) => {
+  const getRiskColor = (nivelRiesgo?: string) => {
     switch (nivelRiesgo) {
       case "CRITICO": return "bg-red-600";
       case "ALTO": return "bg-orange-500";
@@ -139,6 +199,7 @@ export default function EditStudentPage() {
     }
   };
 
+  // Estados de carga
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
@@ -151,6 +212,40 @@ export default function EditStudentPage() {
           </div>
           <p className="mt-4 text-lg animate-pulse">Cargando información del estudiante...</p>
           <div className="mt-6 h-2 w-48 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-full mx-auto animate-rainbow"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de error
+  if (error && !student) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-6 font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
+            Error
+          </div>
+          <p className="text-xl mb-6 text-red-300">{error}</p>
+          <div className="flex space-x-4 justify-center">
+            <button 
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transform transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reintentar
+            </button>
+            <Link 
+              href="/core/students"
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all transform hover:scale-105 border border-white/10"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver al listado
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -212,7 +307,7 @@ export default function EditStudentPage() {
             </Link>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent animate-gradient">
-                Editar: {student.nombre} {student.apellido}
+                Editar: {student.usuario.nombre} {student.usuario.apellido}
               </h1>
               <p className="text-white/70 mt-1 flex items-center">
                 <span className="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
@@ -252,6 +347,18 @@ export default function EditStudentPage() {
           </div>
         </div>
 
+        {/* Mensaje de error */}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/50 text-red-200 backdrop-blur-sm">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Tarjeta de perfil */}
@@ -263,7 +370,7 @@ export default function EditStudentPage() {
                   onMouseLeave={() => setIsHovered(false)}
                 >
                   <span className="font-bold text-3xl text-[#002930]">
-                    {student.nombre.charAt(0)}{student.apellido.charAt(0)}
+                    {student.usuario.nombre.charAt(0)}{student.usuario.apellido.charAt(0)}
                   </span>
                   {isHovered && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full backdrop-blur-sm">
@@ -286,8 +393,8 @@ export default function EditStudentPage() {
                       </label>
                       <input
                         type="text"
-                        name="nombre"
-                        value={student.nombre}
+                        name="usuario.nombre"
+                        value={student.usuario.nombre}
                         onChange={handleInputChange}
                         className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
                         required
@@ -299,8 +406,8 @@ export default function EditStudentPage() {
                       </label>
                       <input
                         type="text"
-                        name="apellido"
-                        value={student.apellido}
+                        name="usuario.apellido"
+                        value={student.usuario.apellido}
                         onChange={handleInputChange}
                         className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
                         required
@@ -312,8 +419,8 @@ export default function EditStudentPage() {
                       </label>
                       <input
                         type="email"
-                        name="email"
-                        value={student.email}
+                        name="usuario.email"
+                        value={student.usuario.email}
                         onChange={handleInputChange}
                         className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
                         required
@@ -365,11 +472,11 @@ export default function EditStudentPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[#001a20] p-3 rounded-xl border border-white/5">
                     <div className="text-xs text-white/60">Nivel de riesgo</div>
-                    <div className="font-medium">{student.nivelRiesgo}</div>
+                    <div className="font-medium">{student.nivelRiesgo || "NO DISPONIBLE"}</div>
                   </div>
                   <div className="bg-[#001a20] p-3 rounded-xl border border-white/5">
                     <div className="text-xs text-white/60">Intervenciones activas</div>
-                    <div className="font-medium">{student.intervencionesActivas}</div>
+                    <div className="font-medium">{student.intervencionesActivas || 0}</div>
                   </div>
                 </div>
                 <div className="text-xs text-white/40 mt-4">
@@ -394,15 +501,18 @@ export default function EditStudentPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">
-                    Institución Educativa *
+                    Institución Educativa
                   </label>
                   <input
                     type="text"
-                    name="institucion"
-                    value={student.institucion}
-                    onChange={handleInputChange}
+                    value={student.institucion.nombre}
                     className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    required
+                    readOnly
+                  />
+                  <input
+                    type="hidden"
+                    name="institucionId"
+                    value={student.institucionId}
                   />
                 </div>
                 
@@ -413,11 +523,12 @@ export default function EditStudentPage() {
                     </label>
                     <select
                       name="grado"
-                      value={student.grado}
+                      value={student.grado || ""}
                       onChange={handleInputChange}
                       className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
                       required
                     >
+                      <option value="">Seleccionar grado</option>
                       <option value="6°">6° Grado</option>
                       <option value="7°">7° Grado</option>
                       <option value="8°">8° Grado</option>
@@ -479,109 +590,44 @@ export default function EditStudentPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-2">
-                    Dirección *
+                    Dirección
                   </label>
                   <input
                     type="text"
-                    name="direccion"
-                    value={student.direccion}
+                    name="contexto.situacionesEspeciales"
+                    value={student.contexto?.situacionesEspeciales || ""}
                     onChange={handleInputChange}
                     className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    required
+                    placeholder="Dirección del estudiante"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Información de contacto y acudiente */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Información de contacto */}
-            <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                Información de Contacto
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Teléfono *
-                  </label>
-                  <input
-                    type="tel"
-                    name="telefono"
-                    value={student.telefono}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Información del acudiente */}
-            <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Información del Acudiente
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Nombre del Acudiente *
-                  </label>
-                  <input
-                    type="text"
-                    name="acudiente"
-                    value={student.acudiente}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Teléfono del Acudiente *
-                  </label>
-                  <input
-                    type="tel"
-                    name="telefonoAcudiente"
-                    value={student.telefonoAcudiente}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Observaciones adicionales */}
+          {/* Información de contacto */}
           <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10 mb-8">
             <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              Observaciones Adicionales
+              Información de Contacto
             </h3>
             
-            <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">
-                Notas importantes (opcional)
-              </label>
-              <textarea
-                name="observaciones"
-                rows={4}
-                className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all resize-none"
-                placeholder="Agregue cualquier observación adicional relevante sobre el estudiante..."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-2">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  name="usuario.telefono"
+                  value={student.usuario.telefono || ""}
+                  onChange={handleInputChange}
+                  className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
+                  placeholder="Número de teléfono"
+                />
+              </div>
             </div>
           </div>
 
