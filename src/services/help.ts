@@ -1,7 +1,19 @@
 import { api } from "@/lib/api";
-import { GenericMessageResponse, Institution, Student } from "@/lib/type";
+import { GenericMessageResponse, Institution, Student, MotivoSolicitud, TipoSolicitante } from "@/lib/type";
 
-export async function requestQuickHelp(dtoQuickHelp: any) {
+export interface QuickHelpRequest {
+  estudianteId: string;
+  motivo: MotivoSolicitud;
+  descripcion: string;
+  solicitante: TipoSolicitante;
+  informacionContacto?: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
+}
+
+export async function requestQuickHelp(dtoQuickHelp: QuickHelpRequest) {
   return api.post<GenericMessageResponse>(`/help/create-quick-help-request`, dtoQuickHelp);
 }
 

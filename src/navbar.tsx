@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 type NavItem = { label: string; href: string; description?: string };
 
@@ -29,7 +30,6 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isActive, setIsActive] = useState(true);
-  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -95,9 +95,11 @@ export default function Navbar() {
               {/* Contenedor principal del logo */}
               <div className="relative flex items-center gap-3 bg-[#002930]/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 group-hover:border-[#F8F0AF]/30 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-[#F8F0AF]/20">
                 <div className="relative">
-                  <img 
+                  <Image 
                     src="/favicon-32x32.png" 
                     alt="SIEDES" 
+                    width={40}
+                    height={40}
                     className="h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-lg"
                   />
                   {/* Efecto de partícula */}
@@ -282,9 +284,11 @@ export default function Navbar() {
                 className="flex items-center gap-3 group"
                 onClick={() => setOpen(false)}
               >
-                <img 
+                <Image 
                   src="/favicon-32x32.png" 
                   alt="SIEDES" 
+                  width={40}
+                  height={40}
                   className="h-10 w-10 object-contain"
                 />
                 <div className="flex flex-col">

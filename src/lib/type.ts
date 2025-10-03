@@ -2,7 +2,7 @@ export interface ApiErrorResponse {
   message: string;
   statusCode: number;
   error?: string;
-  details?: any;
+  details?: Record<string, unknown> | string | unknown[];
 }
 
 export type Etnia =
@@ -41,10 +41,10 @@ export interface ICreateStudent {
   necesidadesEspeciales?: string;
 }
 
-export interface GenericMessageResponse {
+export interface GenericMessageResponse<T = Record<string, unknown>> {
   message: string;
   success: boolean;
-  data?: any;
+  data?: T;
 }
 
 export interface Institution {
@@ -57,13 +57,13 @@ export interface Institution {
   codigoDANE?: string;
 }
 
-export interface ApiRestResponse<T = any> {
+export interface ApiRestResponse<T = Record<string, unknown>> {
   data: T;
   message: string;
   success: boolean;
 }
 
-enum TipoInstitucion {
+export enum TipoInstitucion {
   PREESCOLAR,
   PRIMARIA,
   SECUNDARIA,
@@ -75,7 +75,7 @@ enum TipoInstitucion {
   OTRO,
 }
 
-enum Departamento {
+export enum Departamento {
   AMAZONAS,
   ANTIOQUIA,
   ARAUCA,
@@ -111,7 +111,7 @@ enum Departamento {
   OTRO,
 }
 
-enum CiudadesUIUB {
+export enum CiudadesUIUB {
   ACANDI,
   ALTO_BAUDO,
   ATRATO,
@@ -169,19 +169,22 @@ export interface CreateInstitutionData {
   codigoDANE?: string;
 }
 
-export interface Institution {
-  id: string;
-  nombre: string;
-  direccion: string;
-  ciudad: CiudadesUIUB;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Student {
   id: string;
   nombre: string;
   apellido: string;
   grado?: string;
   identificacion?: string;
+}
+
+export interface QuickHelpRequest {
+  estudianteId: string;
+  motivo: MotivoSolicitud; // Asumiendo que el backend espera el enum numérico
+  descripcion: string;
+  solicitante: TipoSolicitante; // Asumiendo que el backend espera el enum numérico
+  informacionContacto?: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
 }
