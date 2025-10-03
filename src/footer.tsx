@@ -1,5 +1,6 @@
 'use client';
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
@@ -13,11 +14,7 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <div className="h-10 w-10 rounded-xl bg-[#F8F0AF] flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#002930]">
-                  <path d="M12 3l8 5v8l-8 5-8-5V8l8-5z" fill="currentColor" />
-                </svg>
-              </div>
+              <Image src="/favicon-32x32.png" alt="SIEDES" width={32} height={32} />
               <div className="flex flex-col">
                 <span className="font-bold text-white text-xl">SIEDES</span>
                 <span className="text-xs text-[#F8F0AF]">Sistema Inteligente para la Detección Escolar</span>
