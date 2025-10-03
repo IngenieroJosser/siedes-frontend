@@ -96,12 +96,12 @@ export default function DashboardCore() {
   };
 
   const modules = [
-    { id: "dashboard", name: "Dashboard", icon: moduleIcons.dashboard, desc: "Visión general del sistema" },
-    { id: "students", name: "Estudiantes", icon: moduleIcons.students, desc: "Gestión de estudiantes" },
+    { id: "dashboard", name: "Dashboard", icon: moduleIcons.dashboard, desc: "Visión general del sistema" , href: "/core/"},
+    { id: "students", name: "Estudiantes", icon: moduleIcons.students, desc: "Gestión de estudiantes" , href: "/core/students"},
     { id: "alerts", name: "Alertas", icon: moduleIcons.alerts, desc: "Alertas predictivas" },
-    { id: "interventions", name: "Intervenciones", icon: moduleIcons.interventions, desc: "Estrategias de intervención" },
-    { id: "reports", name: "Reportes", icon: moduleIcons.reports, desc: "Reportes y análisis" },
-    { id: "settings", name: "Configuración", icon: moduleIcons.settings, desc: "Configuración del sistema" }
+    { id: "interventions", name: "Intervenciones", icon: moduleIcons.interventions, desc: "Estrategias de intervención" , href: "/core/interventions"},
+    { id: "reports", name: "Reportes", icon: moduleIcons.reports, desc: "Reportes y análisis" , href: "/core/reports"},
+    { id: "settings", name: "Configuración", icon: moduleIcons.settings, desc: "Configuración del sistema" , href: "/core/settings"},
   ];
 
   // Función para renderizar el gráfico simple
@@ -155,9 +155,10 @@ export default function DashboardCore() {
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">
             {modules.map((module) => (
-              <button
+              <Link
                 key={module.id}
                 onClick={() => setActiveModule(module.id)}
+                href={module.href || "/core"}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${activeModule === module.id ? 'bg-gradient-to-r from-[#AC4A00]/30 to-[#F8F0AF]/30 text-[#F8F0AF] border border-[#F8F0AF]/20 shadow-lg' : 'hover:bg-white/5'}`}
               >
                 <span className={`transition-transform duration-200 group-hover:scale-110 ${activeModule === module.id ? 'text-[#F8F0AF]' : 'text-[#AC4A00]'}`}>
@@ -167,7 +168,7 @@ export default function DashboardCore() {
                   <div className="font-medium">{module.name}</div>
                   <div className="text-xs text-white/60">{module.desc}</div>
                 </div>
-              </button>
+              </Link>
             ))}
           </nav>
         </div>
