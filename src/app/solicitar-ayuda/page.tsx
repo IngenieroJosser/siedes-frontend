@@ -4,7 +4,17 @@ import { useState, useEffect, useMemo } from "react";
 import { requestQuickHelp } from "@/services/help";
 import { getInstitutions } from "@/services/institution";
 import { getStudentsByInstitution } from "@/services/students";
-import { Institution, Student, TipoSolicitante, MotivoSolicitud } from "@/lib/type";
+import { Institution, Student, TipoSolicitante, MotivoSolicitud, QuickHelpRequest } from "@/lib/type";
+
+// Interface para el error de la API
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
 
 export default function SolicitaAyuda() {
   const [formData, setFormData] = useState({
@@ -123,12 +133,13 @@ export default function SolicitaAyuda() {
     setError(null);
     
     try {
-      await requestQuickHelp(formData);
+      await requestQuickHelp(formData as unknown as QuickHelpRequest);
       setIsSubmitted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al enviar solicitud:', err);
+      const errorObj = err as ApiError;
       setError(
-        err.response?.data?.message || 
+        errorObj.response?.data?.message || 
         'Error al enviar la solicitud. Por favor, intenta nuevamente.'
       );
     } finally {
@@ -275,7 +286,7 @@ export default function SolicitaAyuda() {
             {/* Mensaje inspirador */}
             <div className="mt-8 opacity-60 hover:opacity-100 transition-opacity duration-500">
               <p className="text-white/50 italic text-sm">
-                "Cada estudiante merece la oportunidad de brillar. Estamos aquí para asegurarnos de que nada se interponga en tu camino"
+                &ldquo;Cada estudiante merece la oportunidad de brillar. Estamos aquí para asegurarnos de que nada se interponga en tu camino&rdquo;
               </p>
             </div>
           </div>
