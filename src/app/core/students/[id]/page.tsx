@@ -180,7 +180,7 @@ export default function StudentDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6">
+    <div className="pt-24 min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6">
       {/* Efecto de partículas sutiles en el fondo */}
       <div className="fixed inset-0 z-0">
         {[...Array(15)].map((_, i) => (

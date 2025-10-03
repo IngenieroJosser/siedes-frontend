@@ -13,9 +13,10 @@ const dmMono = DM_Mono({
 
 // Metadatos de la aplicación
 export const metadata: Metadata = {
-  title: "SIEDES - Plataforma",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL_FRONTEND || "http://localhost:3000"),
+  title: "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
   description:
-    "Sistema Inteligente para la Detección y Prevención de la Deserción Escolar",
+    "SIEDES es una plataforma etnoeducativa que usa inteligencia artificial para transformar la educación, fortalecer la identidad cultural y prevenir la deserción escolar.",
   keywords: [
     "SIEDES",
     "educación",
@@ -30,9 +31,9 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "SIEDES - Plataforma Educativa",
+    title: "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
     description:
-      "Plataforma que combina inteligencia artificial, análisis predictivo y enfoque etnoeducativo para prevenir la deserción escolar.",
+      "SIEDES es una plataforma etnoeducativa que usa inteligencia artificial para transformar la educación, fortalecer la identidad cultural y prevenir la deserción escolar.",
     url: "https://siedes.com",
     siteName: "SIEDES",
     images: [
