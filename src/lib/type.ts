@@ -141,12 +141,54 @@ export interface CreateInstitutionData {
   codigoDANE?: string;
 }
 
+export interface Alerta {
+  id: string;
+  estudianteId: string;
+  motivo: MotivoSolicitud;
+  descripcion: string;
+  solicitante: TipoSolicitante;
+  informacionContacto?: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
+  revisada?: boolean;
+  creadaEn?: string;
+  actualizadaEn?: string;
+  tipo?: string;
+  severidad?: string;
+}
+
+export interface RegistroAcademico {
+  id: string;
+  estudianteId: string;
+  periodo: string;
+  promedio: number;
+}
+
+export interface Intervencion {
+  id: string;
+  estudianteId: string;
+  tipo: string;
+  descripcion: string;
+}
+
+export interface Nota {
+  id: string;
+  estudianteId: string;
+  descripcion: string;
+}
+
 export interface Student {
   id: string;
   nombre: string;
   apellido: string;
   grado?: string;
   identificacion?: string;
+  alertas?: Alerta[];
+  registros?: RegistroAcademico[];
+  intervenciones?: Intervencion[];
+  notas?: Nota[];
 }
 
 export interface QuickHelpRequest {
@@ -192,4 +234,53 @@ export interface CreateCompleteStudent {
     situacionesEspeciales?: string;
     necesidadesEspeciales?: string;
   };
+}
+
+export interface Student {
+  id: string;
+  usuarioId: string;
+  institucionId: string;
+  edad: number;
+  genero: string;
+  etnia: string;
+  grado?: string;
+  riesgoDesercion: number;
+  activo: boolean;
+  creadoEn: string;
+  actualizadoEn: string;
+  usuario: Usuario;
+  institucion: Institucion;
+  contexto?: ContextoEstudiante;
+}
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  rol: string;
+}
+
+export interface Institucion {
+  id: string;
+  nombre: string;
+}
+
+export interface ContextoEstudiante {
+  id: string;
+  estudianteId: string;
+  distanciaEscuela: number;
+  tiempoDesplazamiento: number;
+  trabaja: boolean;
+  horasTrabajo?: number;
+  ingresosFamiliares?: number;
+  personasHogar: number;
+  apoyoFamiliar: boolean;
+  accesoInternet: boolean;
+  dispositivoElectronico: boolean;
+  participacionComunitaria: boolean;
+  conocimientosAncestrales: boolean;
+  situacionesEspeciales?: string;
+  necesidadesEspeciales?: string;
 }

@@ -3,143 +3,177 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { getStudentById } from "@/services/students";
+import { Student as StudentType } from "@/lib/type";
 
-// Define interfaces for our data structures
-interface Alerta {
-  fecha: string;
-  tipo: string;
-  descripcion: string;
-  severidad: string;
-}
+// Usar las interfaces desde tu archivo de tipos
+type Usuario = StudentType['usuario'];
+type Institucion = StudentType['institucion'];
+type ContextoEstudiante = StudentType['contexto'];
+type Alerta = StudentType['alertas'];
+type RegistroAcademico = StudentType['registros'];
 
-interface Intervencion {
-  id: string;
-  tipo: string;
-  estado: string;
-  fechaInicio: string;
-  responsable: string;
-}
+// Si necesitas una interfaz Student local, usa el tipo importado
+type Student = StudentType;
 
-interface Nota {
-  fecha: string;
-  autor: string;
-  contenido: string;
-}
+// Funciones auxiliares - definirlas antes de su uso
+const getEthnicityLabel = (etnia: string) => {
+  switch (etnia) {
+    case "AFRODESCENDIENTE": return "Afrodescendiente";
+    case "INDIGENA": return "Indígena";
+    case "ROM": return "Gitano/Rom";
+    case "RAIZAL": return "Raizal";
+    case "PALENQUERO": return "Palenquero";
+    case "NINGUNA": return "No especificado";
+    default: return etnia;
+  }
+};
 
-interface Student {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  edad: number;
-  genero: string;
-  etnia: string;
-  grado: string;
-  institucion: string;
-  direccion: string;
-  telefono: string;
-  acudiente: string;
-  telefonoAcudiente: string;
-  riesgoDesercion: number;
-  nivelRiesgo: string;
-  ultimaAlerta: string;
-  intervencionesActivas: number;
-  historialAlertas: Alerta[];
-  intervenciones: Intervencion[];
-  notas: Nota[];
-}
+// Función para determinar el nivel de riesgo basado en el porcentaje
+const getNivelRiesgo = (riesgoDesercion: number): string => {
+  if (riesgoDesercion >= 0.8) return "CRITICO";
+  if (riesgoDesercion >= 0.6) return "ALTO";
+  if (riesgoDesercion >= 0.4) return "MEDIO";
+  return "BAJO";
+};
+
+const getRiskColor = (riesgoDesercion: number) => {
+  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
+  switch (nivelRiesgo) {
+    case "CRITICO": return "bg-red-600";
+    case "ALTO": return "bg-orange-500";
+    case "MEDIO": return "bg-yellow-500";
+    case "BAJO": return "bg-green-500";
+    default: return "bg-gray-500";
+  }
+};
+
+const getRiskText = (riesgoDesercion: number) => {
+  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
+  switch (nivelRiesgo) {
+    case "CRITICO": return "Crítico";
+    case "ALTO": return "Alto";
+    case "MEDIO": return "Medio";
+    case "BAJO": return "Bajo";
+    default: return "Sin riesgo";
+  }
+};
+
+const getSeverityColor = (severidad: string) => {
+  switch (severidad) {
+    case "ALTA": return "bg-red-500/20 text-red-300 border border-red-500/30";
+    case "MEDIA": return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
+    case "BAJA": return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+    default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
+  }
+};
+
+const getStatusColor = (estado: string) => {
+  switch (estado) {
+    case "ACTIVA": return "bg-green-500/20 text-green-300 border border-green-500/30";
+    case "PENDIENTE": return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
+    case "CERRADA": return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
+    default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
+  }
+};
+
+// Formatear fecha
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+// Formatear fecha y hora
+const formatDateTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+// Calcular tiempo relativo
+const getRelativeTime = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMinutes < 1) return "Hace unos segundos";
+    if (diffMinutes < 60) return `Hace ${diffMinutes} minutos`;
+    if (diffHours < 24) return `Hace ${diffHours} horas`;
+    if (diffDays === 1) return "Hace 1 día";
+    if (diffDays < 7) return `Hace ${diffDays} días`;
+    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+    return formatDate(dateString);
+  } catch {
+    return dateString;
+  }
+};
 
 export default function StudentDetail() {
   const params = useParams();
   const [student, setStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [isHovered, setIsHovered] = useState(false);
 
-  // Memoize mockStudent to prevent recreation on every render
-  const mockStudent = useMemo(() => ({
-    id: params.id as string,
-    nombre: "Ana",
-    apellido: "Moreno",
-    email: "ana.moreno@ejemplo.com",
-    edad: 15,
-    genero: "FEMENINO",
-    etnia: "AFRODESCENDIENTE",
-    grado: "9°",
-    institucion: "Institución Educativa San Francisco de Asís",
-    direccion: "Calle 45 # 12-34, Barrio El Centro",
-    telefono: "+57 312 456 7890",
-    acudiente: "María Moreno",
-    telefonoAcudiente: "+57 310 123 4567",
-    riesgoDesercion: 0.85,
-    nivelRiesgo: "ALTO",
-    ultimaAlerta: "Hace 2 días",
-    intervencionesActivas: 2,
-    historialAlertas: [
-      { fecha: "2023-10-15", tipo: "Asistencia", descripcion: "Falta injustificada por 3 días consecutivos", severidad: "ALTA" },
-      { fecha: "2023-09-28", tipo: "Académica", descripcion: "Bajo rendimiento en matemáticas", severidad: "MEDIA" },
-      { fecha: "2023-08-10", tipo: "Comportamiento", descripcion: "Aislamiento en actividades grupales", severidad: "MEDIA" }
-    ],
-    intervenciones: [
-      { id: "1", tipo: "Refuerzo académico", estado: "ACTIVA", fechaInicio: "2023-10-20", responsable: "Prof. Carlos Martínez" },
-      { id: "2", tipo: "Acompañamiento psicológico", estado: "ACTIVA", fechaInicio: "2023-10-18", responsable: "Psic. Laura Díaz" }
-    ],
-    notas: [
-      { fecha: "2023-11-05", autor: "Psic. Laura Díaz", contenido: "Ana mostró mejoría en su participación en clase hoy." },
-      { fecha: "2023-10-25", autor: "Prof. Carlos Martínez", contenido: "Se programó sesión de refuerzo para matemáticas los martes y jueves." }
-    ]
-  }), [params.id]);
-
+  // Cargar estudiante del backend
   useEffect(() => {
-    // Simular carga de datos
-    const loadData = async () => {
-      setIsLoading(true);
-      setTimeout(() => {
-        setStudent(mockStudent);
+    const loadStudent = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const studentData = await getStudentById(params.id as string);
+        setStudent(studentData);
+      } catch (error) {
+        console.error("Error cargando estudiante:", error);
+        setError("Error al cargar la información del estudiante. Por favor, intenta nuevamente.");
+      } finally {
         setIsLoading(false);
-      }, 800);
+      }
     };
 
-    loadData();
-  }, [params.id, mockStudent]);
-
-  const getRiskColor = (nivelRiesgo: string) => {
-    switch (nivelRiesgo) {
-      case "CRITICO": return "bg-red-600";
-      case "ALTO": return "bg-orange-500";
-      case "MEDIO": return "bg-yellow-500";
-      case "BAJO": return "bg-green-500";
-      default: return "bg-gray-500";
+    if (params.id) {
+      loadStudent();
     }
-  };
+  }, [params.id]);
 
-  const getRiskText = (nivelRiesgo: string) => {
-    switch (nivelRiesgo) {
-      case "CRITICO": return "Crítico";
-      case "ALTO": return "Alto";
-      case "MEDIO": return "Medio";
-      case "BAJO": return "Bajo";
-      default: return "Sin riesgo";
-    }
-  };
+  // Calcular estadísticas en tiempo real
+  const stats = useMemo(() => {
+    if (!student) return null;
 
-  const getSeverityColor = (severidad: string) => {
-    switch (severidad) {
-      case "ALTA": return "bg-red-500/20 text-red-300 border border-red-500/30";
-      case "MEDIA": return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
-      case "BAJA": return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
-      default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
-    }
-  };
-
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case "ACTIVA": return "bg-green-500/20 text-green-300 border border-green-500/30";
-      case "PENDIENTE": return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
-      case "CERRADA": return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
-      default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
-    }
-  };
+    const totalAlertas = student.alertas?.length || 0;
+    const alertasNoRevisadas = student.alertas?.filter(a => !a.revisada).length || 0; 
+    const totalRegistros = student.registros?.length || 0;
+    const ultimoRegistro = student.registros?.[0];
+    
+    return { 
+      totalAlertas, 
+      alertasNoRevisadas, 
+      totalRegistros,
+      ultimoRegistro 
+    };
+  }, [student]);
 
   if (isLoading) {
     return (
@@ -152,28 +186,37 @@ export default function StudentDetail() {
             </div>
           </div>
           <p className="mt-4 text-lg animate-pulse">Cargando información del estudiante...</p>
-          <div className="mt-6 h-2 w-48 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-full mx-auto animate-rainbow"></div>
+          <div className="mt-6 h-2 w-48 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-full mx-auto animate-pulse"></div>
         </div>
       </div>
     );
   }
 
-  if (!student) {
+  if (error || !student) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-6 font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent animate-pulse">
-            Estudiante no encontrado
-          </div>
-          <Link 
-            href="/core/students"
-            className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transform transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <div className="bg-red-500/20 border border-red-500 rounded-2xl p-8 max-w-md">
+            <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Volver al listado
-          </Link>
+            <h3 className="text-xl font-semibold mb-2">Error al cargar estudiante</h3>
+            <p className="text-white/70 mb-6">{error || "El estudiante no existe o no se pudo cargar la información"}</p>
+            <div className="flex space-x-4 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-[#AC4A00] text-white rounded-xl hover:opacity-90 transition-opacity"
+              >
+                Reintentar
+              </button>
+              <Link 
+                href="/core/students"
+                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                Volver al listado
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -213,12 +256,12 @@ export default function StudentDetail() {
               </svg>
             </Link>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent animate-gradient">
-                {student.nombre} {student.apellido}
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
+                {student.usuario?.nombre} {student.usuario?.apellido}
               </h1>
               <p className="text-white/70 mt-1 flex items-center">
-                <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
-                Información detallada y gestión del estudiante
+                <span className={`w-2 h-2 rounded-full mr-2 ${student.activo ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></span>
+                {student.activo ? 'Estudiante activo' : 'Estudiante inactivo'} • {student.usuario?.email}
               </p>
             </div>
           </div>
@@ -236,7 +279,7 @@ export default function StudentDetail() {
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Eliminar
+              {student.activo ? 'Desactivar' : 'Activar'}
             </button>
           </div>
         </div>
@@ -252,7 +295,7 @@ export default function StudentDetail() {
                 onMouseLeave={() => setIsHovered(false)}
               >
                 <span className="font-bold text-3xl text-[#002930]">
-                  {student.nombre.charAt(0)}{student.apellido.charAt(0)}
+                  {student.usuario?.nombre?.charAt(0) || ''}{student.usuario?.apellido?.charAt(0) || ''}
                 </span>
                 {isHovered && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full backdrop-blur-sm">
@@ -265,30 +308,32 @@ export default function StudentDetail() {
               </div>
               <div className="flex-1 text-center md:text-left">
                 <h2 className="text-2xl font-bold mb-1">
-                  {student.nombre} {student.apellido}
+                  {student.usuario?.nombre} {student.usuario?.apellido}
                 </h2>
-                <p className="text-white/60 mb-4">{student.email}</p>
+                <p className="text-white/60 mb-4">{student.usuario?.email}</p>
                 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                   <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded-full mr-3 ${getRiskColor(student.nivelRiesgo)} animate-pulse`}></div>
+                    <div className={`w-4 h-4 rounded-full mr-3 ${getRiskColor(student.riesgoDesercion)} animate-pulse`}></div>
                     <span className="font-medium bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
-                      Riesgo {getRiskText(student.nivelRiesgo)} ({(student.riesgoDesercion * 100).toFixed(0)}%)
+                      Riesgo {getRiskText(student.riesgoDesercion)} ({(student.riesgoDesercion * 100).toFixed(0)}%)
                     </span>
                   </div>
                   
-                  <div className="flex items-center text-sm bg-[#001a20] px-3 py-1 rounded-lg border border-white/5">
-                    <svg className="w-4 h-4 mr-1 text-[#F8F0AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {student.ultimaAlerta}
-                  </div>
+                  {stats && stats.alertasNoRevisadas > 0 && (
+                    <div className="flex items-center text-sm bg-[#001a20] px-3 py-1 rounded-lg border border-white/5">
+                      <svg className="w-4 h-4 mr-1 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      {stats.alertasNoRevisadas} alertas pendientes
+                    </div>
+                  )}
                   
                   <div className="flex items-center text-sm bg-[#001a20] px-3 py-1 rounded-lg border border-white/5">
                     <svg className="w-4 h-4 mr-1 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {student.intervencionesActivas} intervenciones activas
+                    {stats?.totalRegistros || 0} registros académicos
                   </div>
                 </div>
               </div>
@@ -312,7 +357,7 @@ export default function StudentDetail() {
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                   <div 
-                    className={`h-2.5 rounded-full ${getRiskColor(student.nivelRiesgo)} animate-progress`} 
+                    className={`h-2.5 rounded-full ${getRiskColor(student.riesgoDesercion)}`} 
                     style={{ width: `${student.riesgoDesercion * 100}%` }}
                   ></div>
                 </div>
@@ -321,11 +366,11 @@ export default function StudentDetail() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-[#001a20] p-3 rounded-xl border border-white/5 transform transition-all hover:scale-105">
                   <div className="text-xs text-white/60">Nivel de riesgo</div>
-                  <div className="font-medium">{getRiskText(student.nivelRiesgo)}</div>
+                  <div className="font-medium">{getRiskText(student.riesgoDesercion)}</div>
                 </div>
                 <div className="bg-[#001a20] p-3 rounded-xl border border-white/5 transform transition-all hover:scale-105">
-                  <div className="text-xs text-white/60">Intervenciones activas</div>
-                  <div className="font-medium">{student.intervencionesActivas}</div>
+                  <div className="text-xs text-white/60">Alertas activas</div>
+                  <div className="font-medium">{stats?.alertasNoRevisadas || 0}</div>
                 </div>
               </div>
             </div>
@@ -345,7 +390,7 @@ export default function StudentDetail() {
             <div className="space-y-2 text-sm">
               <div className="flex">
                 <span className="text-white/60 w-20">Institución:</span>
-                <span className="truncate">{student.institucion}</span>
+                <span className="truncate">{student.institucion?.nombre || 'No asignada'}</span>
               </div>
               <div className="flex">
                 <span className="text-white/60 w-20">Grado:</span>
@@ -368,15 +413,17 @@ export default function StudentDetail() {
             <div className="space-y-2 text-sm">
               <div className="flex">
                 <span className="text-white/60 w-20">Género:</span>
-                <span>{student.genero === "FEMENINO" ? "Femenino" : "Masculino"}</span>
+                <span className="capitalize">{student.genero?.toLowerCase()}</span>
               </div>
               <div className="flex">
                 <span className="text-white/60 w-20">Etnia:</span>
-                <span>{student.etnia}</span>
+                <span>{getEthnicityLabel(student.etnia)}</span>
               </div>
               <div className="flex">
-                <span className="text-white/60 w-20">Dirección:</span>
-                <span className="truncate">{student.direccion}</span>
+                <span className="text-white/60 w-20">Estado:</span>
+                <span className={student.activo ? 'text-green-400' : 'text-red-400'}>
+                  {student.activo ? 'Activo' : 'Inactivo'}
+                </span>
               </div>
             </div>
           </div>
@@ -390,16 +437,16 @@ export default function StudentDetail() {
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex">
+                <span className="text-white/60 w-20">Email:</span>
+                <span className="truncate">{student.usuario?.email}</span>
+              </div>
+              <div className="flex">
                 <span className="text-white/60 w-20">Teléfono:</span>
-                <span>{student.telefono}</span>
+                <span>{student.usuario?.telefono || 'No registrado'}</span>
               </div>
               <div className="flex">
-                <span className="text-white/60 w-20">Acudiente:</span>
-                <span>{student.acudiente}</span>
-              </div>
-              <div className="flex">
-                <span className="text-white/60 w-20">Teléfono acudiente:</span>
-                <span>{student.telefonoAcudiente}</span>
+                <span className="text-white/60 w-20">Registro:</span>
+                <span>{formatDate(student.creadoEn)}</span>
               </div>
             </div>
           </div>
@@ -426,7 +473,7 @@ export default function StudentDetail() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span>Nueva intervención</span>
+                <span>Nueva alerta</span>
               </button>
               <button className="p-2 bg-[#001a20] hover:bg-[#002a32] rounded-lg border border-white/5 transition-all transform hover:-translate-y-0.5 flex flex-col items-center justify-center group text-xs">
                 <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
@@ -468,24 +515,29 @@ export default function StudentDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               Historial de Alertas
+              {stats && stats.alertasNoRevisadas > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1 animate-pulse">
+                  {stats.alertasNoRevisadas}
+                </span>
+              )}
             </button>
             <button
-              onClick={() => setActiveTab("intervenciones")}
-              className={`px-6 py-4 font-medium flex items-center transition-all ${activeTab === "intervenciones" ? "text-[#F8F0AF] border-b-2 border-[#F8F0AF] bg-gradient-to-r from-[#F8F0AF]/10 to-transparent" : "text-white/60 hover:text-[#F8F0AF] hover:bg-white/5"}`}
+              onClick={() => setActiveTab("academico")}
+              className={`px-6 py-4 font-medium flex items-center transition-all ${activeTab === "academico" ? "text-[#F8F0AF] border-b-2 border-[#F8F0AF] bg-gradient-to-r from-[#F8F0AF]/10 to-transparent" : "text-white/60 hover:text-[#F8F0AF] hover:bg-white/5"}`}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
               </svg>
-              Intervenciones
+              Registro Académico
             </button>
             <button
-              onClick={() => setActiveTab("notas")}
-              className={`px-6 py-4 font-medium flex items-center transition-all ${activeTab === "notas" ? "text-[#F8F0AF] border-b-2 border-[#F8F0AF] bg-gradient-to-r from-[#F8F0AF]/10 to-transparent" : "text-white/60 hover:text-[#F8F0AF] hover:bg-white/5"}`}
+              onClick={() => setActiveTab("contexto")}
+              className={`px-6 py-4 font-medium flex items-center transition-all ${activeTab === "contexto" ? "text-[#F8F0AF] border-b-2 border-[#F8F0AF] bg-gradient-to-r from-[#F8F0AF]/10 to-transparent" : "text-white/60 hover:text-[#F8F0AF] hover:bg-white/5"}`}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Notas y Seguimiento
+              Contexto Estudiantil
             </button>
           </div>
 
@@ -498,48 +550,58 @@ export default function StudentDetail() {
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Factores de Riesgo Identificados
+                    Resumen del Estudiante
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl transform transition-all hover:scale-105 group">
-                      <div className="font-medium mb-2 flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2 animate-pulse"></div>
-                        Asistencia irregular
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium mb-3 text-[#F8F0AF]">Información Básica</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-white/60">ID del Estudiante:</span>
+                          <span className="font-mono">{student.id}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Usuario ID:</span>
+                          <span className="font-mono">{student.usuarioId}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Institución ID:</span>
+                          <span className="font-mono">{student.institucionId}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Fecha de Registro:</span>
+                          <span>{formatDateTime(student.creadoEn)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Última Actualización:</span>
+                          <span>{formatDateTime(student.actualizadoEn)}</span>
+                        </div>
                       </div>
-                      <div className="text-sm text-red-300">5 faltas en los últimos 15 días</div>
                     </div>
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl transform transition-all hover:scale-105 group">
-                      <div className="font-medium mb-2 flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2 animate-pulse"></div>
-                        Bajo rendimiento académico
+                    <div>
+                      <h4 className="font-medium mb-3 text-[#F8F0AF]">Factores de Riesgo</h4>
+                      <div className="space-y-3">
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                          <div className="font-medium mb-1 flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></div>
+                            Nivel de Riesgo Actual
+                          </div>
+                          <div className="text-sm text-red-300">
+                            {getRiskText(student.riesgoDesercion)} ({(student.riesgoDesercion * 100).toFixed(0)}%)
+                          </div>
+                        </div>
+                        {student.contexto && (
+                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                            <div className="font-medium mb-1 flex items-center">
+                              <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
+                              Contexto Registrado
+                            </div>
+                            <div className="text-sm text-yellow-300">
+                              Información socioeconómica disponible
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-yellow-300">Notas por debajo del promedio en 3 materias</div>
-                    </div>
-                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl transform transition-all hover:scale-105 group">
-                      <div className="font-medium mb-2 flex items-center">
-                        <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 animate-pulse"></div>
-                        Situación socioeconómica
-                      </div>
-                      <div className="text-sm text-blue-300">Reporta dificultades económicas en el hogar</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
-                  <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    Plan de Acción Recomendado
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-[#00232a] rounded-xl border border-white/5">
-                      <div className="font-medium mb-2 text-[#F8F0AF]">Refuerzo académico</div>
-                      <div className="text-sm text-white/70">Sesiones de apoyo en matemáticas y ciencias</div>
-                    </div>
-                    <div className="p-4 bg-[#00232a] rounded-xl border border-white/5">
-                      <div className="font-medium mb-2 text-[#F8F0AF]">Acompañamiento psicológico</div>
-                      <div className="text-sm text-white/70">Sesiones semanales de apoyo emocional</div>
                     </div>
                   </div>
                 </div>
@@ -559,127 +621,215 @@ export default function StudentDetail() {
                   </button>
                 </div>
                 
-                <div className="space-y-4">
-                  {student.historialAlertas.map((alerta: Alerta, index: number) => (
-                    <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="font-medium">{alerta.tipo} - {alerta.fecha}</div>
-                          <p className="text-white/70 mt-1">{alerta.descripcion}</p>
+                {student.alertas && student.alertas.length > 0 ? (
+                  <div className="space-y-4">
+                    {student.alertas.map((alerta: any, index: number) => (
+                      <div key={alerta.id || index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-medium">{alerta.tipo || 'Alerta del sistema'} - {formatDate(alerta.creadaEn)}</div>
+                            <p className="text-white/70 mt-1">{alerta.descripcion || 'Descripción no disponible'}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-3 py-1 rounded-full text-xs ${getSeverityColor(alerta.severidad || 'MEDIA')} transform transition-all hover:scale-110`}>
+                              {alerta.severidad || 'MEDIA'}
+                            </span>
+                            {!alerta.revisada && (
+                              <span className="px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-300 border border-red-500/30 animate-pulse">
+                                Pendiente
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs ${getSeverityColor(alerta.severidad)} transform transition-all hover:scale-110`}>
-                          {alerta.severidad}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center mt-4">
-                        <div className="text-sm text-white/60">
-                          Registrada por: Sistema automático
+                        <div className="flex justify-between items-center mt-4">
+                          <div className="text-sm text-white/60">
+                            {getRelativeTime(alerta.creadaEn)}
+                          </div>
+                          <button className="text-sm text-[#F8F0AF] hover:underline flex items-center">
+                            {alerta.revisada ? 'Marcar como pendiente' : 'Marcar como revisada'}
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
                         </div>
-                        <button className="text-sm text-[#F8F0AF] hover:underline flex items-center">
-                          Ver detalles completos
-                          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Pestaña de Intervenciones */}
-            {activeTab === "intervenciones" && (
-              <div className="animate-fadeIn">
-                <div className="mb-6 flex justify-between items-center">
-                  <h3 className="text-lg font-medium text-[#F8F0AF]">Intervenciones y Planes de Acción</h3>
-                  <button className="px-4 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-lg transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30 flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Nueva intervención
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {student.intervenciones.map((intervencion: Intervencion, index: number) => (
-                    <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="font-medium">{intervencion.tipo}</div>
-                          <div className="text-sm text-white/60 mt-1">Iniciada: {intervencion.fechaInicio}</div>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(intervencion.estado)} transform transition-all hover:scale-110`}>
-                          {intervencion.estado}
-                        </span>
-                      </div>
-                      <div className="mb-4">
-                        <div className="text-sm text-white/60">Responsable:</div>
-                        <div className="text-sm">{intervencion.responsable}</div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="px-3 py-1.5 bg-[#00232a] hover:bg-[#002a32] rounded-lg text-sm transition-all transform hover:-translate-y-0.5 flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Ver detalles
-                        </button>
-                        <button className="px-3 py-1.5 bg-[#00232a] hover:bg-[#002a32] rounded-lg text-sm transition-all transform hover:-translate-y-0.5 flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Registrar avance
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Pestaña de Notas y Seguimiento */}
-            {activeTab === "notas" && (
-              <div className="animate-fadeIn">
-                <div className="mb-6 flex justify-between items-center">
-                  <h3 className="text-lg font-medium text-[#F8F0AF]">Notas y Seguimiento</h3>
-                  <button className="px-4 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-lg transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30 flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Agregar nota
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {student.notas.map((nota: Nota, index: number) => (
-                    <div key={index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="font-medium">{nota.autor}</div>
-                          <div className="text-sm text-white/60 mt-1">{nota.fecha}</div>
-                        </div>
-                        <button className="text-[#F8F0AF] hover:text-[#AC4A00] transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="text-white/80">{nota.contenido}</p>
-                    </div>
-                  ))}
-                  
-                  <div className="bg-[#001a20]/40 backdrop-blur-sm rounded-2xl p-5 border border-dashed border-white/10 hover:border-[#F8F0AF]/30 transition-all transform hover:scale-[1.01] cursor-pointer flex items-center justify-center group">
-                    <div className="text-center">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <svg className="w-6 h-6 text-[#002930]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      </div>
-                      <div className="text-white/60 group-hover:text-[#F8F0AF] transition-colors">Agregar nueva nota de seguimiento</div>
-                    </div>
+                    ))}
                   </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-white/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-white/60 mb-2">No hay alertas registradas</h4>
+                    <p className="text-white/40">Este estudiante no tiene alertas activas en el sistema.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pestaña de Registro Académico */}
+            {activeTab === "academico" && (
+              <div className="animate-fadeIn">
+                <div className="mb-6 flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-[#F8F0AF]">Registro Académico</h3>
+                  <button className="px-4 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-lg transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Nuevo registro
+                  </button>
                 </div>
+                
+                {student.registros && student.registros.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {student.registros.map((registro: any, index: number) => (
+                      <div key={registro.id || index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-medium">{registro.periodo || 'Periodo no especificado'}</div>
+                            <div className="text-sm text-white/60 mt-1">{formatDate(registro.creadoEn)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-[#F8F0AF]">{registro.promedio?.toFixed(1) || '0.0'}</div>
+                            <div className="text-xs text-white/60">Promedio</div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-green-400">{registro.materiasAprobadas || 0}</div>
+                            <div className="text-xs text-white/60">Aprobadas</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-red-400">{registro.materiasReprobadas || 0}</div>
+                            <div className="text-xs text-white/60">Reprobadas</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-yellow-400">{registro.inasistencias || 0}</div>
+                            <div className="text-xs text-white/60">Inasistencias</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-blue-400">{registro.comportamiento || 0}/10</div>
+                            <div className="text-xs text-white/60">Comportamiento</div>
+                          </div>
+                        </div>
+
+                        {registro.observaciones && (
+                          <div className="text-sm text-white/70 border-t border-white/10 pt-3">
+                            {registro.observaciones}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-white/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-white/60 mb-2">No hay registros académicos</h4>
+                    <p className="text-white/40">Este estudiante no tiene registros académicos en el sistema.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pestaña de Contexto Estudiantil */}
+            {activeTab === "contexto" && (
+              <div className="animate-fadeIn">
+                <div className="mb-6 flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-[#F8F0AF]">Contexto Estudiantil</h3>
+                  <button className="px-4 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-lg transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Actualizar contexto
+                  </button>
+                </div>
+                
+                {student.contexto ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
+                      <h4 className="font-medium mb-4 text-[#F8F0AF]">Situación Socioeconómica</h4>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Distancia a la escuela:</span>
+                          <span>{student.contexto.distanciaEscuela} km</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Tiempo de desplazamiento:</span>
+                          <span>{student.contexto.tiempoDesplazamiento} min</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Personas en el hogar:</span>
+                          <span>{student.contexto.personasHogar}</span>
+                        </div>
+                        {student.contexto.ingresosFamiliares && (
+                          <div className="flex justify-between">
+                            <span className="text-white/60">Ingresos familiares:</span>
+                            <span>${student.contexto.ingresosFamiliares.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
+                      <h4 className="font-medium mb-4 text-[#F8F0AF]">Factores Adicionales</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className={`p-3 rounded-lg ${student.contexto.trabaja ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-gray-500/20 border border-gray-500/30'}`}>
+                          <div className="text-sm font-medium">Trabaja</div>
+                          <div className="text-lg">{student.contexto.trabaja ? 'Sí' : 'No'}</div>
+                          {student.contexto.horasTrabajo && (
+                            <div className="text-xs text-white/60">{student.contexto.horasTrabajo} hrs/semana</div>
+                          )}
+                        </div>
+                        <div className={`p-3 rounded-lg ${student.contexto.apoyoFamiliar ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'}`}>
+                          <div className="text-sm font-medium">Apoyo familiar</div>
+                          <div className="text-lg">{student.contexto.apoyoFamiliar ? 'Sí' : 'No'}</div>
+                        </div>
+                        <div className={`p-3 rounded-lg ${student.contexto.accesoInternet ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'}`}>
+                          <div className="text-sm font-medium">Acceso a internet</div>
+                          <div className="text-lg">{student.contexto.accesoInternet ? 'Sí' : 'No'}</div>
+                        </div>
+                        <div className={`p-3 rounded-lg ${student.contexto.dispositivoElectronico ? 'bg-green-500/20 border border-green-500/30' : 'bg-red-500/20 border border-red-500/30'}`}>
+                          <div className="text-sm font-medium">Dispositivo electrónico</div>
+                          <div className="text-lg">{student.contexto.dispositivoElectronico ? 'Sí' : 'No'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {(student.contexto.situacionesEspeciales || student.contexto.necesidadesEspeciales) && (
+                      <div className="md:col-span-2 bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-6 border border-white/5">
+                        <h4 className="font-medium mb-4 text-[#F8F0AF]">Observaciones Especiales</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {student.contexto.situacionesEspeciales && (
+                            <div>
+                              <div className="text-sm font-medium text-white/60 mb-2">Situaciones especiales:</div>
+                              <p className="text-white/80">{student.contexto.situacionesEspeciales}</p>
+                            </div>
+                          )}
+                          {student.contexto.necesidadesEspeciales && (
+                            <div>
+                              <div className="text-sm font-medium text-white/60 mb-2">Necesidades especiales:</div>
+                              <p className="text-white/80">{student.contexto.necesidadesEspeciales}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-white/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-white/60 mb-2">Contexto no registrado</h4>
+                    <p className="text-white/40">Este estudiante no tiene información de contexto registrada en el sistema.</p>
+                    <button className="mt-4 px-6 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-lg transition-all transform hover:scale-105">
+                      Registrar Contexto
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -706,37 +856,11 @@ export default function StudentDetail() {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes progress {
-          0% { width: 0%; }
-          100% { width: attr(style); }
-        }
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes rainbow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
         .animate-float {
           animation: float 5s ease-in-out infinite;
         }
         .animate-fadeIn {
           animation: fadeIn 0.5s ease-out forwards;
-        }
-        .animate-progress {
-          animation: progress 1.5s ease-out forwards;
-        }
-        .animate-gradient {
-          background-size: 200% auto;
-          animation: gradient 3s linear infinite;
-        }
-        .animate-rainbow {
-          background: linear-gradient(90deg, #AC4A00, #F8F0AF, #AC4A00);
-          background-size: 200% auto;
-          animation: rainbow 2s linear infinite;
         }
       `}</style>
     </div>
