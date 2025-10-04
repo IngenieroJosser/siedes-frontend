@@ -5,12 +5,8 @@ import Link from "next/link";
 import { getStudents } from "@/services/students";
 import { Student as StudentType } from "@/lib/type";
 
-// Usar las interfaces desde tu archivo de tipos en lugar de definirlas localmente
-type Usuario = StudentType['usuario'];
 type Institucion = StudentType['institucion'];
-type ContextoEstudiante = StudentType['contexto'];
 
-// Si necesitas una interfaz Student local, usa el tipo importado
 type Student = StudentType;
 
 // Funciones auxiliares - definirlas antes de su uso

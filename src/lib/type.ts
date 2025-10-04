@@ -164,6 +164,13 @@ export interface RegistroAcademico {
   estudianteId: string;
   periodo: string;
   promedio: number;
+  materiasAprobadas: number;
+  materiasReprobadas: number;
+  inasistencias: number;
+  comportamiento: number;
+  observaciones: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Intervencion {
@@ -171,12 +178,16 @@ export interface Intervencion {
   estudianteId: string;
   tipo: string;
   descripcion: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Nota {
   id: string;
   estudianteId: string;
   descripcion: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Student {
@@ -283,4 +294,17 @@ export interface ContextoEstudiante {
   conocimientosAncestrales: boolean;
   situacionesEspeciales?: string;
   necesidadesEspeciales?: string;
+}
+
+export interface Nota {
+  id: string;
+  estudianteId: string;
+  descripcion: string;
+}
+
+export interface Intervencion {
+  id: string;
+  estudianteId: string;
+  tipo: string;
+  descripcion: string;
 }

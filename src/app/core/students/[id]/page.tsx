@@ -4,15 +4,33 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getStudentById } from "@/services/students";
-import { Student as StudentType } from "@/lib/type";
+import { Student as StudentType, Alerta, RegistroAcademico, Nota, Intervencion as IntervencionDetalle } from "@/lib/type";
 
-type Usuario = StudentType['usuario'];
-type Institucion = StudentType['institucion'];
-type ContextoEstudiante = StudentType['contexto'];
-type Alerta = StudentType['alertas'];
-type RegistroAcademico = StudentType['registros'];
+// Definir tipos extendidos para las propiedades adicionales que usa el frontend
+interface AlertaDetalle extends Alerta {
+  tipo?: string;
+  severidad?: string;
+  creadaEn: string;
+  revisada?: boolean;
+}
 
-type Student = StudentType;
+interface RegistroAcademicoDetalle extends RegistroAcademico {
+  periodo: string;
+  promedio: number;
+  creadoEn: string;
+  materiasAprobadas: number;
+  materiasReprobadas: number;
+  inasistencias: number;
+  comportamiento: number;
+  observaciones: string;
+}
+
+type Student = StudentType & {
+  alertas?: AlertaDetalle[];
+  registros?: RegistroAcademicoDetalle[];
+  notas?: Nota[];
+  intervenciones?: IntervencionDetalle[];
+};
 
 // Funciones auxiliares - definirlas antes de su uso
 const getEthnicityLabel = (etnia: string) => {
@@ -66,17 +84,9 @@ const getSeverityColor = (severidad: string) => {
   }
 };
 
-const getStatusColor = (estado: string) => {
-  switch (estado) {
-    case "ACTIVA": return "bg-green-500/20 text-green-300 border border-green-500/30";
-    case "PENDIENTE": return "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
-    case "CERRADA": return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
-    default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
-  }
-};
-
 // Formatear fecha
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return 'Fecha no disponible';
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -85,12 +95,13 @@ const formatDate = (dateString: string) => {
       year: 'numeric'
     });
   } catch {
-    return dateString;
+    return dateString || 'Fecha no disponible';
   }
 };
 
 // Formatear fecha y hora
-const formatDateTime = (dateString: string) => {
+const formatDateTime = (dateString: string | undefined) => {
+  if (!dateString) return 'Fecha no disponible';
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -101,12 +112,13 @@ const formatDateTime = (dateString: string) => {
       minute: '2-digit'
     });
   } catch {
-    return dateString;
+    return dateString || 'Fecha no disponible';
   }
 };
 
 // Calcular tiempo relativo
-const getRelativeTime = (dateString: string) => {
+const getRelativeTime = (dateString: string | undefined) => {
+  if (!dateString) return 'Fecha no disponible';
   try {
     const date = new Date(dateString);
     const now = new Date();
@@ -123,7 +135,7 @@ const getRelativeTime = (dateString: string) => {
     if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
     return formatDate(dateString);
   } catch {
-    return dateString;
+    return dateString || 'Fecha no disponible';
   }
 };
 
@@ -142,10 +154,11 @@ export default function StudentDetail() {
         setIsLoading(true);
         setError(null);
         const studentData = await getStudentById(params.id as string);
-        setStudent(studentData);
-      } catch (error) {
-        console.error("Error cargando estudiante:", error);
-        setError("Error al cargar la información del estudiante. Por favor, intenta nuevamente.");
+        setStudent(studentData as Student);
+      } catch (err: unknown) {
+        console.error("Error cargando estudiante:", err);
+        const errorMessage = err instanceof Error ? err.message : "Error al cargar la información del estudiante. Por favor, intenta nuevamente.";
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -621,7 +634,7 @@ export default function StudentDetail() {
                 
                 {student.alertas && student.alertas.length > 0 ? (
                   <div className="space-y-4">
-                    {student.alertas.map((alerta: any, index: number) => (
+                    {student.alertas.map((alerta, index) => (
                       <div key={alerta.id || index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5">
                         <div className="flex justify-between items-start mb-2">
                           <div>
@@ -680,7 +693,7 @@ export default function StudentDetail() {
                 
                 {student.registros && student.registros.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {student.registros.map((registro: any, index: number) => (
+                    {student.registros.map((registro, index) => (
                       <div key={registro.id || index} className="bg-[#001a20]/80 backdrop-blur-sm rounded-2xl p-5 border border-white/5 transform transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5">
                         <div className="flex justify-between items-start mb-3">
                           <div>
