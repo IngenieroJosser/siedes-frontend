@@ -104,7 +104,7 @@ export default function RegisterPage() {
       // Simulación de registro exitoso
       await new Promise(resolve => setTimeout(resolve, 2000));
       router.push("/iniciar-sesion");
-    } catch (err) {
+    } catch (err: any) {
       setError("Error al crear la cuenta. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);

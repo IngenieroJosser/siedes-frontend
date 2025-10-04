@@ -38,7 +38,7 @@ export default function LoginPage() {
       // Simulación de login exitoso
       await new Promise(resolve => setTimeout(resolve, 2000));
       router.push("/core/students");
-    } catch (err) {
+    } catch (err: any) {
       setError("Credenciales incorrectas. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);
