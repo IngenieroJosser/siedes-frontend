@@ -308,3 +308,63 @@ export interface Intervencion {
   tipo: string;
   descripcion: string;
 }
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: Usuario;
+}
+
+export interface RegisterRequest {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  rol: string;
+}
+
+export interface RegisterResponse {
+  token: string;
+  user: Usuario;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  success: boolean;
+}
+
+export interface ChangePasswordRequest {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
+  success: boolean;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  success: boolean;
+}
+
+export enum Rol {
+  ESTUDIANTE,
+  DOCENTE,
+  PADRE,
+  COORDINADOR,
+  LIDER_COMUNITARIO,
+}

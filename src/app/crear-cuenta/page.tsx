@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { Rol } from "@/lib/type";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,7 +16,7 @@ export default function RegisterPage() {
     telefono: "",
     password: "",
     confirmPassword: "",
-    rol: "ESTUDIANTE" as const,
+    rol: Rol.ESTUDIANTE,
     
     // Datos de Estudiante (solo para estudiantes)
     edad: "",
@@ -49,7 +50,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   // Calcular total de pasos según el rol
-  const totalSteps = formData.rol === "ESTUDIANTE" ? 3 : 2;
+  const totalSteps = formData.rol === Rol.ESTUDIANTE ? 3 : 2;
 
   // Efecto para partículas responsivas
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function RegisterPage() {
 
   // Efecto para ajustar el paso cuando cambia el rol
   useEffect(() => {
-    if (formData.rol !== "ESTUDIANTE" && currentStep > 2) {
+    if (formData.rol !== Rol.ESTUDIANTE && currentStep > 2) {
       setCurrentStep(2);
     }
   }, [formData.rol, currentStep]);
@@ -332,19 +333,19 @@ export default function RegisterPage() {
           Información del Rol
         </h3>
         <div className="text-sm text-white/70">
-          {formData.rol === "ESTUDIANTE" && (
+          {formData.rol === Rol.ESTUDIANTE && (
             <p>Como estudiante, podrás acceder a seguimiento académico, alertas tempranas y beneficios educativos.</p>
           )}
-          {formData.rol === "DOCENTE" && (
+          {formData.rol === Rol.DOCENTE && (
             <p>Como docente, tendrás acceso al sistema de alertas tempranas y seguimiento de tus estudiantes.</p>
           )}
-          {formData.rol === "PADRE" && (
+          {formData.rol === Rol.PADRE && (
             <p>Como padre/madre, podrás monitorear el progreso académico y recibir alertas sobre tus hijos.</p>
           )}
-          {formData.rol === "COORDINADOR" && (
+          {formData.rol === Rol.COORDINADOR && (
             <p>Como coordinador, tendrás acceso a reportes institucionales y gestión de alertas.</p>
           )}
-          {formData.rol === "LIDER_COMUNITARIO" && (
+          {formData.rol === Rol.LIDER_COMUNITARIO && (
             <p>Como líder comunitario, podrás participar en programas de prevención y apoyo estudiantil.</p>
           )}
         </div>
@@ -560,7 +561,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Información contextual opcional - Solo para estudiantes */}
-      {formData.rol === "ESTUDIANTE" && (
+      {formData.rol === Rol.ESTUDIANTE && (
         <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
           <h3 className="text-lg font-semibold text-[#F8F0AF] mb-4 flex items-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -640,7 +641,7 @@ export default function RegisterPage() {
     switch (currentStep) {
       case 1: return renderStep1();
       case 2: 
-        return formData.rol === "ESTUDIANTE" ? renderStep2() : renderStep3();
+        return formData.rol === Rol.ESTUDIANTE ? renderStep2() : renderStep3();
       case 3: return renderStep3();
       default: return renderStep1();
     }
@@ -650,7 +651,7 @@ export default function RegisterPage() {
   const getStepDescription = () => {
     if (currentStep === 1) return "Datos básicos de identificación";
     if (currentStep === 2) {
-      return formData.rol === "ESTUDIANTE" 
+      return formData.rol === Rol.ESTUDIANTE 
         ? "Datos educativos y contexto académico" 
         : "Configuración de seguridad";
     }
@@ -714,7 +715,7 @@ export default function RegisterPage() {
               <div className="space-y-4">
                 {[
                   { step: 1, title: "Información Personal", description: "Datos básicos de identificación" },
-                  ...(formData.rol === "ESTUDIANTE" 
+                  ...(formData.rol === Rol.ESTUDIANTE 
                     ? [{ step: 2, title: "Información Académica", description: "Datos educativos y contexto" }]
                     : []),
                   { step: totalSteps, title: "Seguridad", description: "Contraseña y confirmación" }
@@ -755,14 +756,14 @@ export default function RegisterPage() {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                {formData.rol === "ESTUDIANTE" ? "Beneficios para Estudiantes" : 
-                 formData.rol === "DOCENTE" ? "Beneficios para Docentes" :
-                 formData.rol === "PADRE" ? "Beneficios para Padres" :
-                 formData.rol === "COORDINADOR" ? "Beneficios para Coordinadores" :
+                {formData.rol === Rol.ESTUDIANTE ? "Beneficios para Estudiantes" : 
+                 formData.rol === Rol.DOCENTE ? "Beneficios para Docentes" :
+                 formData.rol === Rol.PADRE ? "Beneficios para Padres" :
+                 formData.rol === Rol.COORDINADOR ? "Beneficios para Coordinadores" :
                  "Beneficios para Líderes Comunitarios"}
               </h3>
               <ul className="space-y-2 text-sm text-white/70">
-                {formData.rol === "ESTUDIANTE" && (
+                {formData.rol === Rol.ESTUDIANTE && (
                   <>
                     <li className="flex items-center">
                       <svg className="w-4 h-4 text-[#F8F0AF] mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -784,7 +785,7 @@ export default function RegisterPage() {
                     </li>
                   </>
                 )}
-                {formData.rol === "DOCENTE" && (
+                {formData.rol === Rol.DOCENTE && (
                   <>
                     <li className="flex items-center">
                       <svg className="w-4 h-4 text-[#F8F0AF] mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -806,7 +807,7 @@ export default function RegisterPage() {
                     </li>
                   </>
                 )}
-                {formData.rol === "PADRE" && (
+                {formData.rol === Rol.PADRE && (
                   <>
                     <li className="flex items-center">
                       <svg className="w-4 h-4 text-[#F8F0AF] mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -828,7 +829,7 @@ export default function RegisterPage() {
                     </li>
                   </>
                 )}
-                {(formData.rol === "COORDINADOR" || formData.rol === "LIDER_COMUNITARIO") && (
+                {(formData.rol === Rol.COORDINADOR || formData.rol === Rol.LIDER_COMUNITARIO) && (
                   <>
                     <li className="flex items-center">
                       <svg className="w-4 h-4 text-[#F8F0AF] mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
