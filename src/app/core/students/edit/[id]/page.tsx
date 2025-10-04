@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { updateStudent, getStudentById } from "@/services/students";
-import { CreateCompleteStudent, Student, ContextoEstudiante, Intervencion as BackendIntervencion } from "@/lib/type";
+import { CreateCompleteStudent, Student, ContextoEstudiante } from "@/lib/type";
 
-// Interfaces para datos auxiliares del frontend (renombradas para evitar conflictos)
 interface AlertaFrontend {
   fecha: string;
   tipo: string;
