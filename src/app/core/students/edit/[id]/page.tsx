@@ -4,17 +4,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { updateStudent, getStudentById } from "@/services/students";
-import { CreateCompleteStudent, Student } from "@/lib/type";
+import { CreateCompleteStudent, Student, ContextoEstudiante, Intervencion as BackendIntervencion } from "@/lib/type";
 
-// Interfaces para datos auxiliares del frontend
-interface Alerta {
+// Interfaces para datos auxiliares del frontend (renombradas para evitar conflictos)
+interface AlertaFrontend {
   fecha: string;
   tipo: string;
   descripcion: string;
   severidad: string;
 }
 
-interface Intervencion {
+interface IntervencionFrontend {
   id: string;
   tipo: string;
   estado: string;
@@ -22,22 +22,20 @@ interface Intervencion {
   responsable: string;
 }
 
-interface Nota {
+interface NotaFrontend {
   fecha: string;
   autor: string;
   contenido: string;
 }
 
-// Extender la interfaz Student para incluir campos del frontend
-interface StudentWithFrontendData extends Student {
-  // Campos adicionales para el frontend
+interface StudentWithFrontendData extends Omit<Student, 'intervenciones' | 'notas'> {
   nivelRiesgo?: string;
   ultimaAlerta?: string;
   intervencionesActivas?: number;
-  historialAlertas?: Alerta[];
-  intervenciones?: Intervencion[];
-  notas?: Nota[];
-  // Campos de contacto adicionales
+  historialAlertas?: AlertaFrontend[];
+  intervenciones?: IntervencionFrontend[];
+  notas?: NotaFrontend[];
+
   direccion?: string;
   telefono?: string;
   acudiente?: string;
@@ -53,7 +51,6 @@ export default function EditStudentPage() {
   const [isHovered, setIsHovered] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar datos del estudiante dinámicamente
   useEffect(() => {
     const loadStudentData = async () => {
       if (!params.id) {
@@ -85,9 +82,9 @@ export default function EditStudentPage() {
         };
         
         setStudent(mappedStudent);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading student:', err);
-        const errorMessage = err.response?.data?.message || 'No se pudo cargar la información del estudiante';
+        const errorMessage = err instanceof Error ? err.message : 'No se pudo cargar la información del estudiante';
         setError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -118,8 +115,14 @@ export default function EditStudentPage() {
         ...student,
         contexto: {
           ...student.contexto,
-          [field]: value
-        }
+          [field]: field === 'distanciaEscuela' || field === 'tiempoDesplazamiento' || field === 'personasHogar' 
+            ? Number(value) 
+            : field === 'trabaja' || field === 'apoyoFamiliar' || field === 'accesoInternet' || 
+              field === 'dispositivoElectronico' || field === 'participacionComunitaria' || 
+              field === 'conocimientosAncestrales'
+            ? value === 'true'
+            : value
+        } as ContextoEstudiante // Type assertion para asegurar el tipo
       });
     } else {
       // Campos directos del estudiante
@@ -155,7 +158,21 @@ export default function EditStudentPage() {
           institucionId: student.institucionId,
           riesgoDesercion: student.riesgoDesercion,
         },
-        contexto: student.contexto || {
+        contexto: student.contexto ? {
+          distanciaEscuela: student.contexto.distanciaEscuela || 0,
+          tiempoDesplazamiento: student.contexto.tiempoDesplazamiento || 0,
+          trabaja: student.contexto.trabaja || false,
+          horasTrabajo: student.contexto.horasTrabajo,
+          ingresosFamiliares: student.contexto.ingresosFamiliares,
+          personasHogar: student.contexto.personasHogar || 0,
+          apoyoFamiliar: student.contexto.apoyoFamiliar || false,
+          accesoInternet: student.contexto.accesoInternet || false,
+          dispositivoElectronico: student.contexto.dispositivoElectronico || false,
+          participacionComunitaria: student.contexto.participacionComunitaria || false,
+          conocimientosAncestrales: student.contexto.conocimientosAncestrales || false,
+          situacionesEspeciales: student.contexto.situacionesEspeciales || student.direccion || "",
+          necesidadesEspeciales: student.contexto.necesidadesEspeciales || ""
+        } : {
           distanciaEscuela: 0,
           tiempoDesplazamiento: 0,
           trabaja: false,
@@ -176,9 +193,9 @@ export default function EditStudentPage() {
       router.push(`/core/students/${student.id}`);
       router.refresh();
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating student:', err);
-      const errorMessage = err.response?.data?.message || 'Error al guardar los cambios. Por favor, intenta nuevamente.';
+      const errorMessage = err instanceof Error ? err.message : 'Error al guardar los cambios. Por favor, intenta nuevamente.';
       setError(errorMessage);
     } finally {
       setIsSaving(false);
