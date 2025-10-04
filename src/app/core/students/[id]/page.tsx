@@ -6,14 +6,12 @@ import { useParams } from "next/navigation";
 import { getStudentById } from "@/services/students";
 import { Student as StudentType } from "@/lib/type";
 
-// Usar las interfaces desde tu archivo de tipos
 type Usuario = StudentType['usuario'];
 type Institucion = StudentType['institucion'];
 type ContextoEstudiante = StudentType['contexto'];
 type Alerta = StudentType['alertas'];
 type RegistroAcademico = StudentType['registros'];
 
-// Si necesitas una interfaz Student local, usa el tipo importado
 type Student = StudentType;
 
 // Funciones auxiliares - definirlas antes de su uso

@@ -132,26 +132,9 @@ export default function DashboardCore() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white overflow-hidden">
+    <div className="pt-20 flex h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white overflow-hidden">
       {/* Sidebar */}
       <aside className={`fixed md:relative z-40 w-64 bg-[#00232a] border-r border-white/10 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:flex flex-col h-full shadow-xl`}>
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center shadow-md">
-              <span className="font-bold text-[#002930]">S</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">SIEDES</span>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 rounded-lg hover:bg-white/10 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">
             {modules.map((module) => (
