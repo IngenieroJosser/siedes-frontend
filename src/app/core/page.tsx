@@ -98,7 +98,7 @@ export default function DashboardCore() {
   const modules = [
     { id: "dashboard", name: "Dashboard", icon: moduleIcons.dashboard, desc: "Visión general del sistema" , href: "/core/"},
     { id: "students", name: "Estudiantes", icon: moduleIcons.students, desc: "Gestión de estudiantes" , href: "/core/students"},
-    { id: "alerts", name: "Alertas", icon: moduleIcons.alerts, desc: "Alertas predictivas" },
+    { id: "alerts", name: "Alertas", icon: moduleIcons.alerts, desc: "Alertas predictivas", href: "/core/alerts" },
     { id: "interventions", name: "Intervenciones", icon: moduleIcons.interventions, desc: "Estrategias de intervención" , href: "/core/interventions"},
     { id: "reports", name: "Reportes", icon: moduleIcons.reports, desc: "Reportes y análisis" , href: "/core/reports"},
     { id: "settings", name: "Configuración", icon: moduleIcons.settings, desc: "Configuración del sistema" , href: "/core/settings"},

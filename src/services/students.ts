@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import { GenericMessageResponse, CreateCompleteStudent, Student } from "@/lib/type";
+import { GenericMessageResponse, CreateCompleteStudent, Student, UpdateStudentData } from "@/lib/type";
 
 export async function getStudentsByInstitution(institutionId: string): Promise<Student[]> {
   return await api.get<Student[]>(`/help/students/by-institution/${institutionId}`);
@@ -17,7 +17,7 @@ export async function getStudentById(id: string): Promise<Student> {
   return await api.get<Student>(`/students/${id}`);
 }
 
-export async function updateStudent(id: string, dtoStudent: CreateCompleteStudent) {
+export async function updateStudent(id: string, dtoStudent: UpdateStudentData) {
   return api.put<GenericMessageResponse>(`/students/${id}`, dtoStudent);
 }
 

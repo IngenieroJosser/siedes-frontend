@@ -86,7 +86,7 @@ export default function StudentsList() {
       }
       return acc;
     }, []);
-    
+
     return [
       { id: "all", nombre: "Todas las instituciones" },
       ...uniqueInstitutions
@@ -128,7 +128,7 @@ export default function StudentsList() {
 
     // Filtro de búsqueda
     if (searchTerm) {
-      result = result.filter(student => 
+      result = result.filter(student =>
         `${student.usuario?.nombre || ''} ${student.usuario?.apellido || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.usuario?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.grado?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -174,7 +174,7 @@ export default function StudentsList() {
     const critico = students.filter(s => getNivelRiesgo(s.riesgoDesercion) === "CRITICO").length;
     const alto = students.filter(s => getNivelRiesgo(s.riesgoDesercion) === "ALTO").length;
     const conContexto = students.filter(s => s.contexto).length;
-    
+
     return { total, critico, alto, conContexto };
   }, [students]);
 
@@ -217,6 +217,11 @@ export default function StudentsList() {
         {/* Header */}
         <div className="pt-18 flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
+            <Link href="/core" className="mt-10 mb-2 inline-flex items-center p-3 rounded-xl bg-[#00232a]/60 hover:bg-[#00232a] border border-white/10 text-[#F8F0AF] hover:text-white transition-all transform hover:translate-x-1 backdrop-blur-sm">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
               Gestión de Estudiantes
             </h1>
@@ -435,8 +440,8 @@ export default function StudentsList() {
                   <tr>
                     <td colSpan={6} className="py-8 px-6 text-center">
                       <div className="text-white/60">
-                        {students.length === 0 
-                          ? "No hay estudiantes registrados en el sistema" 
+                        {students.length === 0
+                          ? "No hay estudiantes registrados en el sistema"
                           : "No se encontraron estudiantes con los filtros aplicados"
                         }
                       </div>

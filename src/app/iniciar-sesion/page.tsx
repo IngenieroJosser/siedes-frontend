@@ -4,10 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { login } from "@/services/auth";
+import { Rol } from "@/lib/type";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeInput, setActiveInput] = useState<string | null>(null);
@@ -35,10 +39,25 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Simulación de login exitoso
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      router.push("/core/students");
+      const response = await login(formData);
+      if(response.user.rol === Rol.ESTUDIANTE) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        router.push("/core/students");
+      } else if(response.user.rol === Rol.DOCENTE) {
+        router.push("/core/teachers");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else if(response.user.rol === Rol.PADRE) {
+        router.push("/core/parents");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else if(response.user.rol === Rol.COORDINADOR) {
+        router.push("/core/coordinators");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else if(response.user.rol === Rol.LIDER_COMUNITARIO) {
+        router.push("/core/community-leaders");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     } catch (err: any) {
+      console.log(err);
       setError("Credenciales incorrectas. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);
@@ -255,8 +274,8 @@ export default function LoginPage() {
                         type="email"
                         autoComplete="email"
                         required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         onFocus={() => setActiveInput('email')}
                         onBlur={() => setActiveInput(null)}
                         className="w-full bg-[#001a20] border border-white/10 rounded-xl pl-10 pr-4 py-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all duration-300"
@@ -285,8 +304,8 @@ export default function LoginPage() {
                         type="password"
                         autoComplete="current-password"
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         onFocus={() => setActiveInput('password')}
                         onBlur={() => setActiveInput(null)}
                         className="w-full bg-[#001a20] border border-white/10 rounded-xl pl-10 pr-4 py-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all duration-300"

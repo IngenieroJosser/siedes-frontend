@@ -4,42 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { updateStudent, getStudentById } from "@/services/students";
-import { CreateCompleteStudent, Student, ContextoEstudiante } from "@/lib/type";
-
-interface AlertaFrontend {
-  fecha: string;
-  tipo: string;
-  descripcion: string;
-  severidad: string;
-}
-
-interface IntervencionFrontend {
-  id: string;
-  tipo: string;
-  estado: string;
-  fechaInicio: string;
-  responsable: string;
-}
-
-interface NotaFrontend {
-  fecha: string;
-  autor: string;
-  contenido: string;
-}
-
-interface StudentWithFrontendData extends Omit<Student, 'intervenciones' | 'notas'> {
-  nivelRiesgo?: string;
-  ultimaAlerta?: string;
-  intervencionesActivas?: number;
-  historialAlertas?: AlertaFrontend[];
-  intervenciones?: IntervencionFrontend[];
-  notas?: NotaFrontend[];
-
-  direccion?: string;
-  telefono?: string;
-  acudiente?: string;
-  telefonoAcudiente?: string;
-}
+import { ContextoEstudiante, UpdateStudentData, StudentWithFrontendData } from "@/lib/type";
 
 export default function EditStudentPage() {
   const params = useParams();
@@ -67,17 +32,16 @@ export default function EditStudentPage() {
         // Mapear los datos del backend al formato del frontend
         const mappedStudent: StudentWithFrontendData = {
           ...studentData,
-          // Campos del frontend que no vienen del backend
           nivelRiesgo: studentData.riesgoDesercion > 0.7 ? "ALTO" : 
                       studentData.riesgoDesercion > 0.4 ? "MEDIO" : "BAJO",
-          intervencionesActivas: 0, // Esto deberías obtenerlo de tu backend
+          intervencionesActivas: 0,
           historialAlertas: [],
           intervenciones: [],
           notas: [],
           direccion: studentData.contexto?.situacionesEspeciales || "",
           telefono: studentData.usuario.telefono || "",
-          acudiente: "", // Este campo no existe en el backend
-          telefonoAcudiente: "", // Este campo no existe en el backend
+          acudiente: "",
+          telefonoAcudiente: "",
         };
         
         setStudent(mappedStudent);
@@ -121,13 +85,13 @@ export default function EditStudentPage() {
               field === 'conocimientosAncestrales'
             ? value === 'true'
             : value
-        } as ContextoEstudiante // Type assertion para asegurar el tipo
+        } as ContextoEstudiante
       });
     } else {
       // Campos directos del estudiante
       setStudent({
         ...student,
-        [name]: name === 'edad' || name === 'riesgoDesercion' ? parseInt(value) || 0 : value
+        [name]: name === 'edad' || name === 'riesgoDesercion' ? Number(value) : value
       });
     }
   };
@@ -140,52 +104,24 @@ export default function EditStudentPage() {
     setError(null);
 
     try {
-      // Preparar los datos para enviar según la estructura que espera el backend
-      const studentToUpdate: CreateCompleteStudent = {
+      // Preparar los datos en el formato correcto para el backend
+      const studentToUpdate: UpdateStudentData = {
+        edad: student.edad,
+        genero: student.genero,
+        etnia: student.etnia,
+        grado: student.grado || "",
+        institucionId: student.institucionId,
+        riesgoDesercion: student.riesgoDesercion,
         usuario: {
           nombre: student.usuario.nombre,
           apellido: student.usuario.apellido,
           email: student.usuario.email,
-          telefono: student.usuario.telefono,
-          password: "temporaryPassword123" // Necesitas manejar las contraseñas de forma segura
-        },
-        estudiante: {
-          edad: student.edad,
-          genero: student.genero,
-          etnia: student.etnia,
-          grado: student.grado || "",
-          institucionId: student.institucionId,
-          riesgoDesercion: student.riesgoDesercion,
-        },
-        contexto: student.contexto ? {
-          distanciaEscuela: student.contexto.distanciaEscuela || 0,
-          tiempoDesplazamiento: student.contexto.tiempoDesplazamiento || 0,
-          trabaja: student.contexto.trabaja || false,
-          horasTrabajo: student.contexto.horasTrabajo,
-          ingresosFamiliares: student.contexto.ingresosFamiliares,
-          personasHogar: student.contexto.personasHogar || 0,
-          apoyoFamiliar: student.contexto.apoyoFamiliar || false,
-          accesoInternet: student.contexto.accesoInternet || false,
-          dispositivoElectronico: student.contexto.dispositivoElectronico || false,
-          participacionComunitaria: student.contexto.participacionComunitaria || false,
-          conocimientosAncestrales: student.contexto.conocimientosAncestrales || false,
-          situacionesEspeciales: student.contexto.situacionesEspeciales || student.direccion || "",
-          necesidadesEspeciales: student.contexto.necesidadesEspeciales || ""
-        } : {
-          distanciaEscuela: 0,
-          tiempoDesplazamiento: 0,
-          trabaja: false,
-          personasHogar: 0,
-          apoyoFamiliar: false,
-          accesoInternet: false,
-          dispositivoElectronico: false,
-          participacionComunitaria: false,
-          conocimientosAncestrales: false,
-          situacionesEspeciales: student.direccion || "",
-          necesidadesEspeciales: ""
+          telefono: student.usuario.telefono || "",
         }
       };
 
+      console.log('Enviando datos al backend:', studentToUpdate); // Para debugging
+      
       await updateStudent(student.id, studentToUpdate);
       
       // Redirigir a la página de detalles después de guardar
