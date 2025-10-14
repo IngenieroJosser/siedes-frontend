@@ -4,3 +4,7 @@ import { Institution } from "@/lib/type";
 export async function getInstitutions(): Promise<Institution[]> {
   return await api.get<Institution[]>('/help/institutions');
 }
+
+export async function getInstitutionById(id: string): Promise<Institution> {
+  return await api.get<Institution>(`/help/institutions/${id}`);
+}

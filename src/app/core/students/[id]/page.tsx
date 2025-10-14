@@ -30,6 +30,7 @@ type Student = StudentType & {
   registros?: RegistroAcademicoDetalle[];
   notas?: Nota[];
   intervenciones?: IntervencionDetalle[];
+  edad?: number;
 };
 
 // Funciones auxiliares - definirlas antes de su uso

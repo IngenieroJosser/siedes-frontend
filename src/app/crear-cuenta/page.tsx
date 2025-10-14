@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Rol } from "@/lib/type";
+import { Etnia_Enum, Rol, RegisterRequest } from "@/lib/type";
+import { register } from "@/services/auth";
+import { getInstitutions } from "@/services/institution";
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterRequest>({
     // Datos de Usuario (todos los roles)
     nombre: "",
     apellido: "",
@@ -19,19 +21,19 @@ export default function RegisterPage() {
     rol: Rol.ESTUDIANTE,
     
     // Datos de Estudiante (solo para estudiantes)
-    edad: "",
+    edad: 0,
     genero: "",
-    etnia: "NINGUNA" as const,
+    etnia: Etnia_Enum.NINGUNA,
     grado: "",
     institucionId: "",
     
     // Datos de Contexto (solo para estudiantes)
-    distanciaEscuela: "",
-    tiempoDesplazamiento: "",
+    distanciaEscuela: 0,
+    tiempoDesplazamiento: 0,
     trabaja: false,
-    horasTrabajo: "",
-    ingresosFamiliares: "",
-    personasHogar: "",
+    horasTrabajo: 0,
+    ingresosFamiliares: 0,
+    personasHogar: 0,
     apoyoFamiliar: true,
     accesoInternet: false,
     dispositivoElectronico: false,
@@ -47,12 +49,29 @@ export default function RegisterPage() {
   const [particleCount, setParticleCount] = useState(30);
   const [currentStep, setCurrentStep] = useState(1);
   const [institutions, setInstitutions] = useState<any[]>([]);
+  const [isClient, setIsClient] = useState(false);
+  const [particles, setParticles] = useState<React.ReactNode[]>([]);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(false);
   const router = useRouter();
 
   // Calcular total de pasos según el rol
   const totalSteps = formData.rol === Rol.ESTUDIANTE ? 3 : 2;
 
-  // Efecto para partículas responsivas
+  // Función para cargar instituciones
+  const loadInstitutions = async () => {
+    try {
+      setLoadingInstitutions(true);
+      const institutionsData = await getInstitutions();
+      setInstitutions(institutionsData);
+    } catch (error) {
+      console.error("Error cargando instituciones:", error);
+      setError("Error al cargar las instituciones. Por favor, recarga la página.");
+    } finally {
+      setLoadingInstitutions(false);
+    }
+  };
+
+  // Efecto para partículas responsivas y marca de cliente
   useEffect(() => {
     const updateParticleCount = () => {
       if (window.innerWidth < 768) {
@@ -62,18 +81,24 @@ export default function RegisterPage() {
       }
     };
 
+    setIsClient(true);
     updateParticleCount();
-    window.addEventListener('resize', updateParticleCount);
+    setParticles(generateParticles());
     
-    // Simular carga de instituciones
-    setInstitutions([
-      { id: "1", nombre: "Institución Educativa 1", ciudad: "QUIBDO" },
-      { id: "2", nombre: "Institución Educativa 2", ciudad: "QUIBDO" },
-      { id: "3", nombre: "Institución Educativa 3", ciudad: "OTRA_CIUDAD" }
-    ]);
+    // Cargar instituciones reales
+    loadInstitutions();
+    
+    window.addEventListener('resize', updateParticleCount);
 
     return () => window.removeEventListener('resize', updateParticleCount);
   }, []);
+
+  // Efecto para regenerar partículas cuando cambia el count
+  useEffect(() => {
+    if (isClient) {
+      setParticles(generateParticles());
+    }
+  }, [particleCount, isClient]);
 
   // Efecto para ajustar el paso cuando cambia el rol
   useEffect(() => {
@@ -81,6 +106,62 @@ export default function RegisterPage() {
       setCurrentStep(2);
     }
   }, [formData.rol, currentStep]);
+
+  // Función de pseudo-random predecible para evitar hydration errors
+  const pseudoRandom = (index: number, max: number) => {
+    const seed = 12345;
+    return ((index * seed + 123) % max) / max;
+  };
+
+  // Generar partículas con valores predecibles
+  const generateParticles = () => {
+    if (!isClient) return [];
+
+    const particles = [];
+    const shapes = ['circle', 'triangle', 'square', 'line'];
+    
+    for (let i = 0; i < particleCount; i++) {
+      const shape = shapes[Math.floor(pseudoRandom(i, 1) * shapes.length)];
+      const size = pseudoRandom(i, 1) * 12 + 3;
+      const duration = pseudoRandom(i, 1) * 20 + 15;
+      const delay = pseudoRandom(i, 1) * 10;
+      const colorType = Math.floor(pseudoRandom(i, 1) * 3);
+      
+      let color;
+      switch (colorType) {
+        case 0: color = '248, 240, 175'; break;
+        case 1: color = '172, 74, 0'; break;
+        default: color = '255, 255, 255';
+      }
+
+      particles.push(
+        <div
+          key={i}
+          className={`absolute ${getShapeClass(shape)} animate-float`}
+          style={{
+            top: `${pseudoRandom(i, 1) * 100}%`,
+            left: `${pseudoRandom(i, 1) * 100}%`,
+            width: `${size}px`,
+            height: `${size}px`,
+            background: `rgba(${color}, ${pseudoRandom(i, 1) * 0.3 + 0.1})`,
+            animationDuration: `${duration}s`,
+            animationDelay: `${delay}s`,
+            transform: `rotate(${pseudoRandom(i, 1) * 360}deg)`
+          }}
+        />
+      );
+    }
+    return particles;
+  };
+
+  const getShapeClass = (shape: string) => {
+    switch (shape) {
+      case 'triangle': return 'triangle-shape';
+      case 'square': return 'rounded-[4px]';
+      case 'line': return 'line-shape';
+      default: return 'rounded-full';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,12 +181,18 @@ export default function RegisterPage() {
       return;
     }
 
+    // Validar que se seleccionó institución si es estudiante
+    if (formData.rol === Rol.ESTUDIANTE && !formData.institucionId) {
+      setError("Debes seleccionar una institución educativa");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Simulación de registro exitoso
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await register(formData);
       router.push("/iniciar-sesion");
     } catch (err: any) {
-      setError("Error al crear la cuenta. Por favor, intenta nuevamente.");
+      setError(err.message || "Error al crear la cuenta. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
@@ -125,54 +212,6 @@ export default function RegisterPage() {
 
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-
-  // Generar partículas (mismo código del login)
-  const generateParticles = () => {
-    const particles = [];
-    const shapes = ['circle', 'triangle', 'square', 'line'];
-    
-    for (let i = 0; i < particleCount; i++) {
-      const shape = shapes[Math.floor(Math.random() * shapes.length)];
-      const size = Math.random() * 12 + 3;
-      const duration = Math.random() * 20 + 15;
-      const delay = Math.random() * 10;
-      const colorType = Math.floor(Math.random() * 3);
-      
-      let color;
-      switch (colorType) {
-        case 0: color = '248, 240, 175'; break;
-        case 1: color = '172, 74, 0'; break;
-        default: color = '255, 255, 255';
-      }
-
-      particles.push(
-        <div
-          key={i}
-          className={`absolute ${getShapeClass(shape)} animate-float`}
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            width: `${size}px`,
-            height: `${size}px`,
-            background: `rgba(${color}, ${Math.random() * 0.3 + 0.1})`,
-            animationDuration: `${duration}s`,
-            animationDelay: `${delay}s`,
-            transform: `rotate(${Math.random() * 360}deg)`
-          }}
-        />
-      );
-    }
-    return particles;
-  };
-
-  const getShapeClass = (shape: string) => {
-    switch (shape) {
-      case 'triangle': return 'triangle-shape';
-      case 'square': return 'rounded-[4px]';
-      case 'line': return 'line-shape';
-      default: return 'rounded-full';
-    }
   };
 
   // Paso 1: Información Personal (para todos los roles)
@@ -484,15 +523,23 @@ export default function RegisterPage() {
               onChange={handleInputChange}
               onFocus={() => setActiveInput('institucionId')}
               onBlur={() => setActiveInput(null)}
-              className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all duration-300"
+              disabled={loadingInstitutions}
+              className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Seleccionar institución</option>
+              <option value="">
+                {loadingInstitutions ? "Cargando instituciones..." : "Seleccionar institución"}
+              </option>
               {institutions.map((institution) => (
                 <option key={institution.id} value={institution.id}>
-                  {institution.nombre}
+                  {institution.nombre} {institution.ciudad ? `- ${institution.ciudad}` : ''}
                 </option>
               ))}
             </select>
+            {loadingInstitutions && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#F8F0AF]"></div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -664,10 +711,12 @@ export default function RegisterPage() {
       {/* Fondo animado con gradiente dinámico */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] animate-gradient-slow"></div>
       
-      {/* Efecto de partículas avanzado */}
-      <div className="absolute inset-0 z-0">
-        {generateParticles()}
-      </div>
+      {/* Efecto de partículas avanzado - Solo en cliente */}
+      {isClient && (
+        <div className="absolute inset-0 z-0">
+          {particles}
+        </div>
+      )}
 
       {/* Olas animadas en el fondo */}
       <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">

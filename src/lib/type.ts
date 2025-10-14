@@ -13,6 +13,15 @@ export type Etnia =
   | "RAIZAL"
   | "PALENQUERO";
 
+export enum Etnia_Enum {
+  NINGUNA,
+  AFRODESCENDIENTE,
+  INDIGENA,
+  ROM,
+  RAIZAL,
+  PALENQUERO,
+}
+
 export interface GenericMessageResponse<T = Record<string, unknown>> {
   message: string;
   success: boolean;
@@ -188,6 +197,7 @@ export interface Nota {
   descripcion: string;
   creadoEn: string;
   actualizadoEn: string;
+  edad?: number;
 }
 
 export interface Student {
@@ -247,6 +257,21 @@ export interface CreateCompleteStudent {
   };
 }
 
+export interface UpdateStudentData {
+  edad: number;
+  genero: string;
+  etnia: string;
+  grado: string;
+  institucionId: string;
+  riesgoDesercion: number;
+  usuario: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    telefono?: string;
+  };
+}
+
 export interface Student {
   id: string;
   usuarioId: string;
@@ -270,7 +295,7 @@ export interface Usuario {
   apellido: string;
   email: string;
   telefono?: string;
-  rol: string;
+  rol: Rol;
 }
 
 export interface Institucion {
@@ -300,6 +325,7 @@ export interface Nota {
   id: string;
   estudianteId: string;
   descripcion: string;
+  edad?: number;
 }
 
 export interface Intervencion {
@@ -309,6 +335,36 @@ export interface Intervencion {
   descripcion: string;
 }
 
+export interface StudentAuthResponse {
+  id: string;
+  usuarioId: string;
+  edad: number;
+  genero: string;
+  etnia: Etnia;
+  grado: string;
+  riesgoDesercion: number;
+  institucionId: string;
+  creadoEn: string;
+  actualizadoEn: string;
+  activo: boolean;
+  institucion?: Institucion;
+  contexto?: ContextoEstudiante;
+}
+
+export interface UserAuthResponse {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  identificacion?: string;
+  telefono?: string;
+  rol: Rol;
+  creadoEn: string; // o Date si lo conviertes
+  actualizadoEn: string; // o Date
+  activo: boolean;
+  estudiante?: StudentAuthResponse; // opcional, solo si es estudiante
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -316,20 +372,50 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: Usuario;
+  user: UserAuthResponse;
 }
 
 export interface RegisterRequest {
+  // Datos de Usuario (todos los roles)
   nombre: string;
   apellido: string;
   email: string;
+  identificacion?: string;
+  telefono?: string;
   password: string;
-  rol: string;
+  confirmPassword: string;
+  rol: Rol;
+  
+  // Datos de Estudiante (solo para estudiantes, pero opcionales en la interfaz)
+  edad?: number;
+  genero?: string;
+  etnia?: Etnia_Enum;
+  grado?: string;
+  institucionId?: string;
+  
+  // Datos de Contexto (solo para estudiantes, opcionales)
+  distanciaEscuela?: number;
+  tiempoDesplazamiento?: number;
+  trabaja?: boolean;
+  horasTrabajo?: number;
+  ingresosFamiliares?: number;
+  personasHogar?: number;
+  apoyoFamiliar?: boolean;
+  accesoInternet?: boolean;
+  dispositivoElectronico?: boolean;
+  participacionComunitaria?: boolean;
+  conocimientosAncestrales?: boolean;
+  situacionesEspeciales?: string;
+  necesidadesEspeciales?: string;
 }
 
 export interface RegisterResponse {
   token: string;
-  user: Usuario;
+  user: UserAuthResponse;
+}
+export interface RegisterResponse {
+  token: string;
+  user: UserAuthResponse;
 }
 
 export interface ResetPasswordRequest {
@@ -367,4 +453,109 @@ export enum Rol {
   PADRE,
   COORDINADOR,
   LIDER_COMUNITARIO,
+}
+
+export interface AlertaFrontend {
+  fecha: string;
+  tipo: string;
+  descripcion: string;
+  severidad: string;
+}
+
+export interface IntervencionFrontend {
+  id: string;
+  tipo: string;
+  estado: string;
+  fechaInicio: string;
+  responsable: string;
+}
+
+export interface NotaFrontend {
+  fecha: string;
+  autor: string;
+  contenido: string;
+}
+
+export interface StudentWithFrontendData extends Omit<Student, 'intervenciones' | 'notas'> {
+  nivelRiesgo?: string;
+  ultimaAlerta?: string;
+  intervencionesActivas?: number;
+  historialAlertas?: AlertaFrontend[];
+  intervenciones?: IntervencionFrontend[];
+  notas?: NotaFrontend[];
+  direccion?: string;
+  telefono?: string;
+  acudiente?: string;
+  telefonoAcudiente?: string;
+}
+
+export interface Alert {
+  id: string;
+  estudianteId: string;
+  nivelRiesgo: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
+  descripcion: string;
+  factores: string[];
+  creadaEn: string;
+  revisada: boolean;
+  observaciones?: string;
+  fechaRevision?: string;
+  edad: string;
+  estudiante?: {
+    id: string;
+    usuario: {
+      id: string;
+      nombre: string;
+      apellido: string;
+      email: string;
+      telefono?: string;
+      grado?: string;
+      edad?: string;
+    };
+    institucion: {
+      id: string;
+      nombre: string;
+    };
+    contexto?: {
+      id: string;
+      situacionesEspeciales?: string;
+    };
+  };
+}
+
+export interface CreateAlertData {
+  estudianteId: string;
+  nivelRiesgo: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
+  descripcion: string;
+  factores: string[];
+  revisada?: boolean;
+  fechaRevision?: string;
+}
+
+export interface UpdateAlertData {
+  estudianteId?: string;
+  nivelRiesgo?: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
+  descripcion?: string;
+  factores?: string[];
+  revisada?: boolean;
+  fechaRevision?: string;
+  observaciones?: string;
+}
+
+export interface FilterAlertsParams {
+  nivelRiesgo?: string;
+  revisada?: boolean;
+  estudianteId?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  search?: string;
+}
+
+export interface AlertsStats {
+  total: number;
+  revisadas: number;
+  noRevisadas: number;
+  porNivelRiesgo: {
+    [key: string]: number;
+  };
+  alertasRecientes: number;
 }
