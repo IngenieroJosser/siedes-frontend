@@ -2,93 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getAlerts, markAlertAsReviewed, deleteAlert, getAlertsStats } from "@/services/alerts";
+import { getAlerts, markAlertAsReviewed, deleteAlert } from "@/services/alerts"; // Removido getAlertsStats
 import { Alert as AlertType } from "@/lib/type";
 
 type Alert = AlertType;
 
-// Funciones auxiliares (se mantienen igual)
-const getEthnicityLabel = (etnia: string) => {
-  switch (etnia) {
-    case "AFRODESCENDIENTE": return "Afrodescendiente";
-    case "INDIGENA": return "Indígena";
-    case "ROM": return "Gitano/Rom";
-    case "RAIZAL": return "Raizal";
-    case "PALENQUERO": return "Palenquero";
-    case "NINGUNA": return "No especificado";
-    default: return etnia;
-  }
-};
-
-const getNivelRiesgo = (riesgoDesercion: number): string => {
-  if (riesgoDesercion >= 0.8) return "CRITICO";
-  if (riesgoDesercion >= 0.6) return "ALTO";
-  if (riesgoDesercion >= 0.4) return "MEDIO";
-  return "BAJO";
-};
-
-const getRiskColor = (riesgoDesercion: number) => {
-  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
-  switch (nivelRiesgo) {
-    case "CRITICO": return "bg-red-600";
-    case "ALTO": return "bg-orange-500";
-    case "MEDIO": return "bg-yellow-500";
-    case "BAJO": return "bg-green-500";
-    default: return "bg-gray-500";
-  }
-};
-
-const getRiskText = (riesgoDesercion: number) => {
-  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
-  switch (nivelRiesgo) {
-    case "CRITICO": return "Crítico";
-    case "ALTO": return "Alto";
-    case "MEDIO": return "Medio";
-    case "BAJO": return "Bajo";
-    default: return "Sin riesgo";
-  }
-};
-
-const getRiskIcon = (riesgoDesercion: number) => {
-  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
-  switch (nivelRiesgo) {
-    case "CRITICO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-      );
-    case "ALTO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-      );
-    case "MEDIO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-        </svg>
-      );
-    default:
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-      );
-  }
-};
-
-// Función para obtener el color basado en el nivel de riesgo de la alerta
-const getAlertRiskColor = (nivelRiesgo: string) => {
-  switch (nivelRiesgo) {
-    case "CRITICO": return "bg-red-600";
-    case "ALTO": return "bg-orange-500";
-    case "MEDIO": return "bg-yellow-500";
-    case "BAJO": return "bg-green-500";
-    default: return "bg-gray-500";
-  }
-};
+// Interfaz para institución
+interface Institution {
+  id: string;
+  nombre: string;
+}
 
 // Función para obtener el icono basado en el nivel de riesgo de la alerta
 const getAlertRiskIcon = (nivelRiesgo: string) => {
@@ -155,9 +78,9 @@ export default function AlertsPage() {
     loadAlerts();
   }, []);
 
-  // Obtener instituciones únicas de las alertas
+  // Obtener instituciones únicas de las alertas - CORREGIDO: eliminado el tipo 'any'
   const institutions = useMemo(() => {
-    const uniqueInstitutions = alerts.reduce((acc: any[], alert) => {
+    const uniqueInstitutions = alerts.reduce((acc: Institution[], alert) => {
       if (alert.estudiante?.institucion && !acc.find(inst => inst.id === alert.estudiante?.institucion?.id)) {
         acc.push(alert.estudiante.institucion);
       }
@@ -526,7 +449,7 @@ export default function AlertsPage() {
                         {alert.estudiante?.usuario?.nombre || ''} {alert.estudiante?.usuario?.apellido || ''}
                       </div>
                       <div className="text-sm text-white/60">
-                        {alert.estudiante?.usuario?.grado} • {alert.edad} años
+                        {alert.estudiante?.usuario.edad} • {alert.edad} años
                       </div>
                       <div className="text-sm text-white/60">
                         {alert.estudiante?.institucion?.nombre}
@@ -538,8 +461,7 @@ export default function AlertsPage() {
                   <div className="mb-4">
                     <div className="text-sm text-white/70 mb-2">{alert.descripcion}</div>
 
-                    {/* Barra de progreso de riesgo - ELIMINADA ya que riesgoDesercion no existe en la interfaz */}
-                    {/* Si necesitas mostrar el riesgo, puedes usar el nivelRiesgo de la alerta directamente */}
+                    {/* Barra de progreso de riesgo */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
                         <span>Nivel de riesgo</span>
@@ -566,7 +488,7 @@ export default function AlertsPage() {
                   <div className="mb-4">
                     <div className="text-sm font-medium mb-2 text-white/80">Factores identificados:</div>
                     <div className="flex flex-wrap gap-1">
-                      {alert.factores.slice(0, 3).map((factor: string, index: number) => (
+                      {alert.factores.slice(0, 3).map((factor, index) => (
                         <span
                           key={index}
                           className="px-2 py-1 bg-white/5 rounded-lg text-xs text-white/70 border border-white/10"

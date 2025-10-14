@@ -75,6 +75,9 @@ const FACTORES_RIESGO = [
   "Bajo promedio académico"
 ];
 
+// Tipo para los campos del formulario de alerta
+type AlertDataField = 'nivelRiesgo' | 'descripcion' | 'factorInput' | 'observaciones';
+
 export default function CreateAlertPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
@@ -130,7 +133,6 @@ export default function CreateAlertPage() {
     setSearchTerm("");
     
     // Auto-generar descripción basada en el estudiante seleccionado
-    const nivelRiesgoActual = getNivelRiesgo(student.riesgoDesercion);
     const descripcion = `Alerta de deserción ${alertData.nivelRiesgo.toLowerCase()} para ${student.usuario.nombre} ${student.usuario.apellido} - ${student.grado} en ${student.institucion.nombre}`;
     
     setAlertData(prev => ({
@@ -139,11 +141,19 @@ export default function CreateAlertPage() {
     }));
   };
 
-  // Manejar cambios en el formulario
-  const handleInputChange = (field: string, value: any) => {
+  // Manejar cambios en el formulario - CORREGIDO: Eliminado el tipo 'any'
+  const handleInputChange = (field: AlertDataField, value: string) => {
     setAlertData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  // Manejar cambio de nivel de riesgo - FUNCIÓN SEPARADA para el tipo específico
+  const handleNivelRiesgoChange = (value: "CRITICO" | "ALTO" | "MEDIO" | "BAJO") => {
+    setAlertData(prev => ({
+      ...prev,
+      nivelRiesgo: value
     }));
   };
 
@@ -393,7 +403,7 @@ export default function CreateAlertPage() {
                       ].map((nivel) => (
                         <div
                           key={nivel.value}
-                          onClick={() => handleInputChange("nivelRiesgo", nivel.value)}
+                          onClick={() => handleNivelRiesgoChange(nivel.value as "CRITICO" | "ALTO" | "MEDIO" | "BAJO")}
                           className={`p-4 rounded-xl border cursor-pointer transition-all ${
                             alertData.nivelRiesgo === nivel.value
                               ? `${nivel.color} text-white border-transparent`

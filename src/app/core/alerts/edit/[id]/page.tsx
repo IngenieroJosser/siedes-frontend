@@ -8,6 +8,24 @@ import { Alert as AlertType } from "@/lib/type";
 
 type Alert = AlertType;
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+// Función helper para verificar si un error es de tipo ApiError
+function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    ('response' in error || 'message' in error)
+  );
+}
+
 export default function EditAlertPage() {
   const router = useRouter();
   const params = useParams();
@@ -149,14 +167,18 @@ export default function EditAlertPage() {
         router.push("/core/alerts");
       }, 2000);
       
-    } catch (error: any) {
+    } catch (error: unknown) { // CORREGIDO: Cambiado de 'any' a 'unknown'
       console.error("Error actualizando alerta:", error);
       
-      // Manejar diferentes tipos de errores
-      if (error.response?.data?.message) {
-        setError(`Error: ${error.response.data.message}`);
-      } else if (error.message) {
-        setError(`Error: ${error.message}`);
+      // Manejar diferentes tipos de errores de forma type-safe
+      if (isApiError(error)) {
+        if (error.response?.data?.message) {
+          setError(`Error: ${error.response.data.message}`);
+        } else if (error.message) {
+          setError(`Error: ${error.message}`);
+        } else {
+          setError("Error al actualizar la alerta. Por favor, intenta nuevamente.");
+        }
       } else {
         setError("Error al actualizar la alerta. Por favor, intenta nuevamente.");
       }

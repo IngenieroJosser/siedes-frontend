@@ -559,3 +559,86 @@ export interface AlertsStats {
   };
   alertasRecientes: number;
 }
+
+export interface Intervention {
+  id: string;
+  estudianteId: string;
+  tipo: 'ACADEMICA' | 'PSICOLOGICA' | 'ECONOMICA' | 'FAMILIAR' | 'COMUNITARIA' | 'CULTURAL' | 'TUTORIA' | 'OTRA';
+  descripcion: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  estado: 'ACTIVA' | 'COMPLETADA' | 'SUSPENDIDA' | 'CANCELADA';
+  efectividad?: number;
+  recursosUtilizados: string[];
+  participantes: string[];
+  observaciones?: string;
+  creadoEn: string;
+  estudiante?: {
+    id: string;
+    usuario: {
+      id: string;
+      nombre: string;
+      apellido: string;
+      email: string;
+    };
+    grado: string;
+    institucion: {
+      id: string;
+      nombre: string;
+    };
+    contexto?: {
+      id: string;
+      situacionesEspeciales?: string;
+    };
+  };
+}
+
+export interface CreateInterventionData {
+  estudianteId: string;
+  tipo: Intervention['tipo'];
+  descripcion: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  estado?: Intervention['estado'];
+  efectividad?: number;
+  recursosUtilizados: string[];
+  participantes: string[];
+  observaciones?: string;
+}
+
+export interface UpdateInterventionData extends Partial<CreateInterventionData> {}
+
+export interface FilterInterventionsParams {
+  tipo?: Intervention['tipo'];
+  estado?: Intervention['estado'];
+  estudianteId?: string;
+  search?: string;
+  institucionId?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+export interface InterventionsStats {
+  total: number;
+  porEstado: Record<string, { count: number; efectividadPromedio: number }>;
+  porTipo: Record<string, { count: number; efectividadPromedio: number }>;
+  intervencionesRecientes: number;
+  efectividadPromedio: number;
+}
+
+export interface InterventionsResponse {
+  data: Intervention[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface InterventionsStatsResponse {
+  data: {
+    total: number;
+    porEstado: Record<string, { count: number; efectividadPromedio: number }>;
+    porTipo: Record<string, { count: number; efectividadPromedio: number }>;
+    intervencionesRecientes: number;
+    efectividadPromedio: number;
+  };
+}

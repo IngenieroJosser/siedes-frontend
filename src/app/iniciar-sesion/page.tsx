@@ -56,9 +56,14 @@ export default function LoginPage() {
         router.push("/core/community-leaders");
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log(err);
-      setError("Credenciales incorrectas. Por favor, intenta nuevamente.");
+      
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Credenciales incorrectas. Por favor, intenta nuevamente.");
+      }
     } finally {
       setIsLoading(false);
     }

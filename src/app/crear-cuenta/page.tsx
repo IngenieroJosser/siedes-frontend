@@ -4,9 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Etnia_Enum, Rol, RegisterRequest } from "@/lib/type";
+import { Etnia_Enum, Rol, RegisterRequest, Institution } from "@/lib/type";
 import { register } from "@/services/auth";
 import { getInstitutions } from "@/services/institution";
+
+interface ApiError {
+  message?: string;
+}
+
+function isApiError(error: unknown): error is ApiError {
+  return typeof error === 'object' && error !== null && 'message' in error;
+}
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -48,7 +56,7 @@ export default function RegisterPage() {
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [particleCount, setParticleCount] = useState(30);
   const [currentStep, setCurrentStep] = useState(1);
-  const [institutions, setInstitutions] = useState<any[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [particles, setParticles] = useState<React.ReactNode[]>([]);
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
@@ -191,10 +199,12 @@ export default function RegisterPage() {
     try {
       await register(formData);
       router.push("/iniciar-sesion");
-    } catch (err: any) {
-      setError(err.message || "Error al crear la cuenta. Por favor, intenta nuevamente.");
-    } finally {
-      setIsLoading(false);
+    } catch (err: unknown) {
+      if (isApiError(err)) {
+        setError(err.message || "Error al crear la cuenta. Por favor, intenta nuevamente.");
+      } else {
+        setError("Error al crear la cuenta. Por favor, intenta nuevamente.");
+      }
     }
   };
 
