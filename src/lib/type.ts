@@ -413,10 +413,6 @@ export interface RegisterResponse {
   token: string;
   user: UserAuthResponse;
 }
-export interface RegisterResponse {
-  token: string;
-  user: UserAuthResponse;
-}
 
 export interface ResetPasswordRequest {
   email: string;
@@ -606,7 +602,8 @@ export interface CreateInterventionData {
   observaciones?: string;
 }
 
-export interface UpdateInterventionData extends Partial<CreateInterventionData> {}
+// Fix: Replace empty interface with type alias
+export type UpdateInterventionData = Partial<CreateInterventionData>;
 
 export interface FilterInterventionsParams {
   tipo?: Intervention['tipo'];

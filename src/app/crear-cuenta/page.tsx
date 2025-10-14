@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -79,50 +79,14 @@ export default function RegisterPage() {
     }
   };
 
-  // Efecto para partículas responsivas y marca de cliente
-  useEffect(() => {
-    const updateParticleCount = () => {
-      if (window.innerWidth < 768) {
-        setParticleCount(15);
-      } else {
-        setParticleCount(30);
-      }
-    };
-
-    setIsClient(true);
-    updateParticleCount();
-    setParticles(generateParticles());
-    
-    // Cargar instituciones reales
-    loadInstitutions();
-    
-    window.addEventListener('resize', updateParticleCount);
-
-    return () => window.removeEventListener('resize', updateParticleCount);
-  }, []);
-
-  // Efecto para regenerar partículas cuando cambia el count
-  useEffect(() => {
-    if (isClient) {
-      setParticles(generateParticles());
-    }
-  }, [particleCount, isClient]);
-
-  // Efecto para ajustar el paso cuando cambia el rol
-  useEffect(() => {
-    if (formData.rol !== Rol.ESTUDIANTE && currentStep > 2) {
-      setCurrentStep(2);
-    }
-  }, [formData.rol, currentStep]);
-
   // Función de pseudo-random predecible para evitar hydration errors
-  const pseudoRandom = (index: number, max: number) => {
+  const pseudoRandom = useCallback((index: number, max: number) => {
     const seed = 12345;
     return ((index * seed + 123) % max) / max;
-  };
+  }, []);
 
-  // Generar partículas con valores predecibles
-  const generateParticles = () => {
+  // Generar partículas con valores predecibles - ahora useCallback
+  const generateParticles = useCallback(() => {
     if (!isClient) return [];
 
     const particles = [];
@@ -160,7 +124,42 @@ export default function RegisterPage() {
       );
     }
     return particles;
-  };
+  }, [isClient, particleCount, pseudoRandom]);
+
+  // Efecto para partículas responsivas y marca de cliente
+  useEffect(() => {
+    const updateParticleCount = () => {
+      if (window.innerWidth < 768) {
+        setParticleCount(15);
+      } else {
+        setParticleCount(30);
+      }
+    };
+
+    setIsClient(true);
+    updateParticleCount();
+    
+    // Cargar instituciones reales
+    loadInstitutions();
+    
+    window.addEventListener('resize', updateParticleCount);
+
+    return () => window.removeEventListener('resize', updateParticleCount);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Efecto para regenerar partículas cuando cambia el count
+  useEffect(() => {
+    if (isClient) {
+      setParticles(generateParticles());
+    }
+  }, [generateParticles, isClient]);
+
+  // Efecto para ajustar el paso cuando cambia el rol
+  useEffect(() => {
+    if (formData.rol !== Rol.ESTUDIANTE && currentStep > 2) {
+      setCurrentStep(2);
+    }
+  }, [formData.rol, currentStep]);
 
   const getShapeClass = (shape: string) => {
     switch (shape) {

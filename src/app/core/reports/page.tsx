@@ -6,6 +6,12 @@ import { getAlerts } from "@/services/alerts";
 import { getStudents } from "@/services/students";
 import { Alert, Student } from "@/lib/type";
 
+// Add interface for Institution
+interface Institution {
+  id: string;
+  nombre: string;
+}
+
 export default function ReportsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -45,7 +51,7 @@ export default function ReportsPage() {
 
   // Obtener instituciones únicas
   const institutions = useMemo(() => {
-    const uniqueInstitutions = students.reduce((acc: any[], student) => {
+    const uniqueInstitutions = students.reduce((acc: Institution[], student) => {
       if (student.institucion && !acc.find(inst => inst.id === student.institucion.id)) {
         acc.push(student.institucion);
       }
@@ -410,7 +416,7 @@ export default function ReportsPage() {
         <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8">
           <h3 className="text-lg font-semibold mb-6 text-[#F8F0AF]">Factores de Riesgo Más Comunes</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stats.factoresTop.map(([factor, count], index) => (
+            {stats.factoresTop.map(([factor, count]) => (
               <div key={factor} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#F8F0AF]/30 transition-all">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white/80 text-sm font-medium">{factor}</span>
