@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getStudents } from "@/services/students";
-import { Student } from "@/lib/type";
 import { 
   getInterventions, 
   deleteIntervention, 
