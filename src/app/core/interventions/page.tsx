@@ -10,11 +10,15 @@ import {
   getInterventionsStats
 } from "@/services/interventions";
 
-import { Intervention as InterventionType, FilterInterventionsParams } from "@/lib/type";
+import { 
+  Intervention as InterventionType, 
+  FilterInterventionsParams,
+  TipoIntervencion,
+  EstadoIntervencion 
+} from "@/lib/type";
 
 export default function InterventionsPage() {
   const [interventions, setInterventions] = useState<InterventionType[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,14 +44,12 @@ export default function InterventionsPage() {
         setIsLoading(true);
         setError(null);
         
-        // Cargar estudiantes e intervenciones en paralelo
-        const [studentsData, interventionsResponse, statsResponse] = await Promise.all([
-          getStudents(),
+        // Cargar intervenciones y estadísticas en paralelo
+        const [interventionsResponse, statsResponse] = await Promise.all([
           getInterventions(),
           getInterventionsStats()
         ]);
         
-        setStudents(studentsData || []);
         setInterventions(interventionsResponse || []);
         
         // Procesar estadísticas desde el backend
@@ -92,8 +94,8 @@ export default function InterventionsPage() {
   useEffect(() => {
     const filters: FilterInterventionsParams = {};
     
-    if (typeFilter !== "all") filters.tipo = typeFilter as any;
-    if (statusFilter !== "all") filters.estado = statusFilter as any;
+    if (typeFilter !== "all") filters.tipo = typeFilter as TipoIntervencion;
+    if (statusFilter !== "all") filters.estado = statusFilter as EstadoIntervencion;
     if (institutionFilter !== "all") filters.institucionId = institutionFilter;
     if (searchTerm) filters.search = searchTerm;
 
@@ -102,7 +104,7 @@ export default function InterventionsPage() {
 
   // Obtener instituciones únicas
   const institutions = useMemo(() => {
-    const uniqueInstitutions = interventions.reduce((acc: any[], intervention) => {
+    const uniqueInstitutions = interventions.reduce((acc: Array<{id: string, nombre: string}>, intervention) => {
       if (intervention.estudiante?.institucion && !acc.find(inst => inst.id === intervention.estudiante!.institucion.id)) {
         acc.push(intervention.estudiante.institucion);
       }
