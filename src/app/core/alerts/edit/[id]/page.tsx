@@ -1,257 +1,189 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { getStudents } from "@/services/students";
-import { Student as StudentType } from "@/lib/type";
-import { getAlertById, updateAlert, deleteAlert } from "@/services/alerts";
+import { getAlertById, updateAlert } from "@/services/alerts";
+import { Alert as AlertType } from "@/lib/type";
 
-type Student = StudentType;
-
-// Funciones auxiliares
-const getEthnicityLabel = (etnia: string) => {
-  switch (etnia) {
-    case "AFRODESCENDIENTE": return "Afrodescendiente";
-    case "INDIGENA": return "Indígena";
-    case "ROM": return "Gitano/Rom";
-    case "RAIZAL": return "Raizal";
-    case "PALENQUERO": return "Palenquero";
-    case "NINGUNA": return "No especificado";
-    default: return etnia;
-  }
-};
-
-const getNivelRiesgo = (riesgoDesercion: number): string => {
-  if (riesgoDesercion >= 0.8) return "CRITICO";
-  if (riesgoDesercion >= 0.6) return "ALTO";
-  if (riesgoDesercion >= 0.4) return "MEDIO";
-  return "BAJO";
-};
-
-const getRiskColor = (riesgoDesercion: number) => {
-  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
-  switch (nivelRiesgo) {
-    case "CRITICO": return "bg-red-600";
-    case "ALTO": return "bg-orange-500";
-    case "MEDIO": return "bg-yellow-500";
-    case "BAJO": return "bg-green-500";
-    default: return "bg-gray-500";
-  }
-};
-
-const getRiskText = (riesgoDesercion: number) => {
-  const nivelRiesgo = getNivelRiesgo(riesgoDesercion);
-  switch (nivelRiesgo) {
-    case "CRITICO": return "Crítico";
-    case "ALTO": return "Alto";
-    case "MEDIO": return "Medio";
-    case "BAJO": return "Bajo";
-    default: return "Sin riesgo";
-  }
-};
-
-// Factores de riesgo predefinidos basados en tu base de datos
-const FACTORES_RIESGO = [
-  "Bajo rendimiento académico",
-  "Inasistencias frecuentes",
-  "Problemas económicos familiares",
-  "Falta de apoyo familiar",
-  "Trabaja mientras estudia",
-  "Larga distancia a la escuela",
-  "Sin acceso a internet",
-  "Sin dispositivo electrónico",
-  "Problemas de salud mental",
-  "Situación de acoso escolar",
-  "Problemas familiares",
-  "Falta de motivación",
-  "Dificultades de aprendizaje",
-  "Situación de desplazamiento",
-  "Problemas de vivienda",
-  "Falta de alimentación adecuada",
-  "Problemas de transporte",
-  "Situación de vulnerabilidad por etnia",
-  "Falta de participación en clase",
-  "Bajo promedio académico"
-];
+type Alert = AlertType;
 
 export default function EditAlertPage() {
-  const params = useParams();
   const router = useRouter();
-  const [students, setStudents] = useState<Student[]>([]);
-  const [currentAlert, setCurrentAlert] = useState<any>(null);
+  const params = useParams();
+  const alertId = params.id as string;
+
+  const [alert, setAlert] = useState<Alert | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Estado del formulario de alerta
-  const [alertData, setAlertData] = useState({
-    nivelRiesgo: "ALTO" as "CRITICO" | "ALTO" | "MEDIO" | "BAJO",
-    descripcion: "",
-    factores: [] as string[],
-    factorInput: "",
-    observaciones: "",
-    revisada: false
+  // Estados del formulario
+  const [formData, setFormData] = useState({
+    nivelRiesgo: 'BAJO' as 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO',
+    descripcion: '',
+    factores: [''],
+    revisada: false,
+    observaciones: '',
   });
 
-  // Cargar estudiantes y alerta actual
+  // Cargar alerta al montar el componente
   useEffect(() => {
-    const loadData = async () => {
+    const loadAlert = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        // Cargar estudiantes
-        const studentsData = await getStudents();
-        setStudents(studentsData);
-
-        // Cargar alerta actual desde la API REAL
-        if (params.id) {
-          try {
-            const alert = await getAlertById(params.id as string);
-            setCurrentAlert(alert);
-            setSelectedStudent(alert.estudiante);
-            setAlertData({
-              nivelRiesgo: alert.nivelRiesgo,
-              descripcion: alert.descripcion,
-              factores: alert.factores,
-              factorInput: "",
-              observaciones: "",
-              revisada: alert.revisada
-            });
-          } catch (error) {
-            console.error("Error cargando alerta:", error);
-            setError("Alerta no encontrada");
-          }
-        }
+        const alertData = await getAlertById(alertId);
+        setAlert(alertData);
+        
+        // Inicializar formulario con datos de la alerta
+        setFormData({
+          nivelRiesgo: alertData.nivelRiesgo,
+          descripcion: alertData.descripcion,
+          factores: alertData.factores.length > 0 ? alertData.factores : [''],
+          revisada: alertData.revisada,
+          observaciones: alertData.observaciones || '',
+        });
+        
       } catch (error) {
-        console.error("Error cargando datos:", error);
-        setError("Error al cargar los datos. Por favor, intenta nuevamente.");
+        console.error("Error cargando alerta:", error);
+        setError("Error al cargar la alerta. Por favor, intenta nuevamente.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadData();
-  }, [params.id]);
+    if (alertId) {
+      loadAlert();
+    }
+  }, [alertId]);
 
-  // Filtrar estudiantes basado en la búsqueda
-  const filteredStudents = useMemo(() => {
-    if (!searchTerm) return students;
-    return students.filter(student => 
-      `${student.usuario?.nombre || ''} ${student.usuario?.apellido || ''}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      student.usuario?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.institucion?.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [students, searchTerm]);
-
-  // Manejar selección de estudiante
-  const handleSelectStudent = (student: Student) => {
-    setSelectedStudent(student);
-    setSearchTerm("");
+  // Manejar cambios en los inputs
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
     
-    // Auto-generar descripción basada en el estudiante seleccionado
-    const descripcion = `Alerta de deserción ${alertData.nivelRiesgo.toLowerCase()} para ${student.usuario.nombre} ${student.usuario.apellido} - ${student.grado} en ${student.institucion.nombre}`;
-    
-    setAlertData(prev => ({
-      ...prev,
-      descripcion
-    }));
-  };
-
-  // Manejar cambios en el formulario
-  const handleInputChange = (field: string, value: any) => {
-    setAlertData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Manejar factores de riesgo
-  const handleAddFactor = (factor: string) => {
-    if (factor && !alertData.factores.includes(factor)) {
-      setAlertData(prev => ({
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({
         ...prev,
-        factores: [...prev.factores, factor],
-        factorInput: ""
+        [name]: checked
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
       }));
     }
   };
 
-  const handleRemoveFactor = (factorToRemove: string) => {
-    setAlertData(prev => ({
+  // Manejar cambios en los factores
+  const handleFactorChange = (index: number, value: string) => {
+    const newFactores = [...formData.factores];
+    newFactores[index] = value;
+    setFormData(prev => ({
       ...prev,
-      factores: prev.factores.filter(factor => factor !== factorToRemove)
+      factores: newFactores
     }));
   };
 
-  const handleAddCustomFactor = () => {
-    if (alertData.factorInput.trim() && !alertData.factores.includes(alertData.factorInput.trim())) {
-      setAlertData(prev => ({
+  // Agregar nuevo factor
+  const addFactor = () => {
+    setFormData(prev => ({
+      ...prev,
+      factores: [...prev.factores, '']
+    }));
+  };
+
+  // Eliminar factor
+  const removeFactor = (index: number) => {
+    if (formData.factores.length > 1) {
+      const newFactores = formData.factores.filter((_, i) => i !== index);
+      setFormData(prev => ({
         ...prev,
-        factores: [...prev.factores, alertData.factorInput.trim()],
-        factorInput: ""
+        factores: newFactores
       }));
     }
   };
 
+  // Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedStudent || !currentAlert) {
-      setError("Debes seleccionar un estudiante y la alerta debe estar cargada");
-      return;
-    }
-  
-    setIsSubmitting(true);
-    setError(null);
-  
     try {
-      // Actualizar la alerta usando la API REAL
-      await updateAlert(currentAlert.id, {
-        estudianteId: selectedStudent.id,
-        nivelRiesgo: alertData.nivelRiesgo,
-        descripcion: alertData.descripcion,
-        factores: alertData.factores,
-        revisada: alertData.revisada
-      });
-  
-      router.push("/core/alerts");
+      setIsSubmitting(true);
+      setError(null);
+      setSuccess(null);
+
+      // Filtrar factores vacíos
+      const factoresFiltrados = formData.factores.filter(factor => factor.trim() !== '');
+
+      if (factoresFiltrados.length === 0) {
+        setError("Debe agregar al menos un factor de riesgo");
+        return;
+      }
+
+      if (!formData.descripcion.trim()) {
+        setError("La descripción es obligatoria");
+        return;
+      }
+
+      // Preparar datos para actualización
+      const updateData = {
+        nivelRiesgo: formData.nivelRiesgo,
+        descripcion: formData.descripcion,
+        factores: factoresFiltrados,
+        revisada: formData.revisada,
+        observaciones: formData.observaciones || undefined,
+        // El estudianteId no se puede cambiar en la edición
+        estudianteId: alert?.estudianteId
+      };
+
+      await updateAlert(alertId, updateData);
+      
+      setSuccess("Alerta actualizada correctamente");
+      
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        router.push("/core/alerts");
+      }, 2000);
       
     } catch (error: any) {
       console.error("Error actualizando alerta:", error);
-      const errorMessage = error.response?.data?.message || "Error al actualizar la alerta. Por favor, intenta nuevamente.";
-      setError(errorMessage);
+      
+      // Manejar diferentes tipos de errores
+      if (error.response?.data?.message) {
+        setError(`Error: ${error.response.data.message}`);
+      } else if (error.message) {
+        setError(`Error: ${error.message}`);
+      } else {
+        setError("Error al actualizar la alerta. Por favor, intenta nuevamente.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!currentAlert) return;
-    
-    if (!confirm("¿Estás seguro de que deseas eliminar esta alerta? Esta acción no se puede deshacer.")) {
-      return;
+  // Función para obtener el color del nivel de riesgo
+  const getRiskColor = (nivelRiesgo: string) => {
+    switch (nivelRiesgo) {
+      case "CRITICO": return "text-red-400";
+      case "ALTO": return "text-orange-400";
+      case "MEDIO": return "text-yellow-400";
+      case "BAJO": return "text-green-400";
+      default: return "text-gray-400";
     }
+  };
 
-    setIsDeleting(true);
-    setError(null);
-
-    try {
-      // Eliminar la alerta usando la API REAL
-      await deleteAlert(currentAlert.id);
-      router.push("/core/alerts");
-    } catch (error: any) {
-      console.error("Error eliminando alerta:", error);
-      const errorMessage = error.response?.data?.message || "Error al eliminar la alerta. Por favor, intenta nuevamente.";
-      setError(errorMessage);
-    } finally {
-      setIsDeleting(false);
+  // Función para obtener el color de fondo del nivel de riesgo
+  const getRiskBgColor = (nivelRiesgo: string) => {
+    switch (nivelRiesgo) {
+      case "CRITICO": return "bg-red-500/20 border-red-500/50";
+      case "ALTO": return "bg-orange-500/20 border-orange-500/50";
+      case "MEDIO": return "bg-yellow-500/20 border-yellow-500/50";
+      case "BAJO": return "bg-green-500/20 border-green-500/50";
+      default: return "bg-gray-500/20 border-gray-500/50";
     }
   };
 
@@ -266,7 +198,7 @@ export default function EditAlertPage() {
     );
   }
 
-  if (error && !currentAlert) {
+  if (error && !alert) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6 flex items-center justify-center">
         <div className="text-center">
@@ -274,7 +206,7 @@ export default function EditAlertPage() {
             <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className="text-lg font-semibold mb-2">Error al cargar la alerta</h3>
+            <h3 className="text-lg font-semibold mb-2">Error al cargar alerta</h3>
             <p className="text-white/70 mb-4">{error}</p>
             <div className="flex space-x-3 justify-center">
               <button
@@ -285,7 +217,7 @@ export default function EditAlertPage() {
               </button>
               <Link
                 href="/core/alerts"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+                className="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all"
               >
                 Volver a Alertas
               </Link>
@@ -296,9 +228,31 @@ export default function EditAlertPage() {
     );
   }
 
+  if (!alert) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-yellow-500/20 border border-yellow-500 rounded-2xl p-6 max-w-md">
+            <svg className="w-12 h-12 text-yellow-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <h3 className="text-lg font-semibold mb-2">Alerta no encontrada</h3>
+            <p className="text-white/70 mb-4">La alerta que intentas editar no existe o no tienes permisos para acceder a ella.</p>
+            <Link
+              href="/core/alerts"
+              className="inline-flex items-center px-4 py-2 bg-[#AC4A00] text-white rounded-xl hover:opacity-90 transition-opacity"
+            >
+              Volver a Alertas
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="pt-18 flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
@@ -306,22 +260,12 @@ export default function EditAlertPage() {
               Editar Alerta
             </h1>
             <p className="text-white/70 mt-2">
-              Modifica la información de la alerta de deserción escolar
+              Actualiza la información de la alerta de deserción
             </p>
-            {currentAlert && (
-              <div className="flex items-center mt-2 text-sm text-white/60">
-                <span className="bg-white/10 px-2 py-1 rounded-lg mr-2">
-                  ID: {currentAlert.id}
-                </span>
-                <span className="bg-white/10 px-2 py-1 rounded-lg">
-                  Creada: {new Date(currentAlert.creadaEn).toLocaleDateString('es-ES')}
-                </span>
-              </div>
-            )}
           </div>
           <Link
             href="/core/alerts"
-            className="mt-4 md:mt-0 inline-flex items-center px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10"
+            className="inline-flex items-center px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 mt-4 md:mt-0"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -330,332 +274,250 @@ export default function EditAlertPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Panel izquierdo - Selección de estudiante */}
-          <div className="lg:col-span-1">
-            <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Estudiante Actual
-              </h3>
-
-              {selectedStudent && (
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-3">
-                      <span className="font-bold text-[#002930]">
-                        {selectedStudent.usuario.nombre.charAt(0)}{selectedStudent.usuario.apellido.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium">
-                        {selectedStudent.usuario.nombre} {selectedStudent.usuario.apellido}
-                      </div>
-                      <div className="text-sm text-white/60">{selectedStudent.usuario.email}</div>
-                    </div>
+        {/* Información del estudiante */}
+        {alert.estudiante && (
+          <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-[#F8F0AF]">Información del Estudiante</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-3">
+                  <span className="font-bold text-[#002930] text-sm">
+                    {alert.estudiante.usuario.nombre?.charAt(0)}{alert.estudiante.usuario.apellido?.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-medium">
+                    {alert.estudiante.usuario.nombre} {alert.estudiante.usuario.apellido}
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-white/60">Edad</div>
-                      <div>{selectedStudent.edad} años</div>
-                    </div>
-                    <div>
-                      <div className="text-white/60">Grado</div>
-                      <div>{selectedStudent.grado}</div>
-                    </div>
-                    <div>
-                      <div className="text-white/60">Género</div>
-                      <div className="capitalize">{selectedStudent.genero.toLowerCase()}</div>
-                    </div>
-                    <div>
-                      <div className="text-white/60">Etnia</div>
-                      <div>{getEthnicityLabel(selectedStudent.etnia)}</div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-white/10">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="text-white/60">Riesgo actual</div>
-                      <div className="font-medium">{getRiskText(selectedStudent.riesgoDesercion)}</div>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className={`h-2 rounded-full ${getRiskColor(selectedStudent.riesgoDesercion)}`} 
-                        style={{ width: `${selectedStudent.riesgoDesercion * 100}%` }}
-                      ></div>
-                    </div>
+                  <div className="text-sm text-white/60">
+                    {alert.estudiante.usuario.email}
                   </div>
                 </div>
-              )}
-
-              <div className="mt-6">
-                <h4 className="font-medium mb-3 text-[#F8F0AF]">Cambiar Estudiante</h4>
-                
-                {/* Búsqueda */}
-                <div className="relative mb-4">
-                  <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    type="text"
-                    placeholder="Buscar estudiante..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-                  />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-1">Edad</label>
+                  <p className="text-white">{alert.edad} años</p>
                 </div>
-
-                {/* Lista de estudiantes */}
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {filteredStudents.map((student) => (
-                    <div
-                      key={student.id}
-                      onClick={() => handleSelectStudent(student)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                        selectedStudent?.id === student.id
-                          ? "bg-[#F8F0AF]/10 border-[#F8F0AF]/50"
-                          : "bg-white/5 border-white/10 hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-3">
-                          <span className="font-bold text-[#002930] text-xs">
-                            {student.usuario.nombre.charAt(0)}{student.usuario.apellido.charAt(0)}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">
-                            {student.usuario.nombre} {student.usuario.apellido}
-                          </div>
-                          <div className="text-xs text-white/60">
-                            {student.grado} • {student.institucion.nombre}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-1">Grado</label>
+                  <p className="text-white">{alert.estudiante.usuario.grado}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-white/60 mb-1">Institución</label>
+                  <p className="text-white">{alert.estudiante.institucion.nombre}</p>
                 </div>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Panel derecho - Formulario de alerta */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit}>
-              <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-6">
-                <h3 className="font-medium mb-6 text-[#F8F0AF] flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        {/* Información de la alerta */}
+        <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-[#F8F0AF]">Información de la Alerta</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-1">Creada el</label>
+              <p className="text-white">
+                {new Date(alert.creadaEn).toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-1">Estado actual</label>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                alert.revisada 
+                  ? "bg-green-500/20 text-green-300 border border-green-500/30" 
+                  : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+              }`}>
+                {alert.revisada ? "Revisada" : "Pendiente"}
+              </span>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-1">Nivel de riesgo actual</label>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getRiskBgColor(alert.nivelRiesgo)} ${getRiskColor(alert.nivelRiesgo)}`}>
+                {alert.nivelRiesgo}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Formulario de edición */}
+        <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8">
+          <form onSubmit={handleSubmit}>
+            {/* Alertas de éxito/error */}
+            {error && (
+              <div className="bg-red-500/20 border border-red-500 rounded-xl p-4 mb-6">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Editar Detalles de la Alerta
-                </h3>
+                  <span className="text-red-300">{error}</span>
+                </div>
+              </div>
+            )}
 
-                {error && (
-                  <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/50 text-red-200">
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{error}</span>
-                    </div>
-                  </div>
-                )}
+            {success && (
+              <div className="bg-green-500/20 border border-green-500 rounded-xl p-4 mb-6">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-green-300">{success}</span>
+                </div>
+              </div>
+            )}
 
-                <div className="space-y-6">
-                  {/* Estado de revisión */}
-                  <div>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={alertData.revisada}
-                        onChange={(e) => handleInputChange("revisada", e.target.checked)}
-                        className="rounded bg-white/5 border-white/10 text-[#F8F0AF] focus:ring-[#F8F0AF] focus:ring-2"
-                      />
-                      <span className="ml-2 text-sm font-medium">Marcar como revisada</span>
-                    </label>
-                    <p className="text-xs text-white/60 mt-1">
-                      Al marcar como revisada, se registrará la fecha actual de revisión.
-                    </p>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nivel de Riesgo */}
+              <div>
+                <label htmlFor="nivelRiesgo" className="block text-sm font-medium mb-2">
+                  Nivel de Riesgo *
+                </label>
+                <select
+                  id="nivelRiesgo"
+                  name="nivelRiesgo"
+                  value={formData.nivelRiesgo}
+                  onChange={handleInputChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
+                  required
+                >
+                  <option value="BAJO">Bajo</option>
+                  <option value="MEDIO">Medio</option>
+                  <option value="ALTO">Alto</option>
+                  <option value="CRITICO">Crítico</option>
+                </select>
+              </div>
 
-                  {/* Nivel de Riesgo */}
-                  <div>
-                    <label className="block text-sm font-medium mb-3">Nivel de Riesgo *</label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {[
-                        { value: "CRITICO", label: "Crítico", color: "bg-red-500", description: "Riesgo inminente de deserción" },
-                        { value: "ALTO", label: "Alto", color: "bg-orange-500", description: "Alta probabilidad de deserción" },
-                        { value: "MEDIO", label: "Medio", color: "bg-yellow-500", description: "Riesgo moderado identificado" },
-                        { value: "BAJO", label: "Bajo", color: "bg-green-500", description: "Riesgo bajo pero presente" }
-                      ].map((nivel) => (
-                        <div
-                          key={nivel.value}
-                          onClick={() => handleInputChange("nivelRiesgo", nivel.value)}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                            alertData.nivelRiesgo === nivel.value
-                              ? `${nivel.color} text-white border-transparent`
-                              : "bg-white/5 border-white/10 hover:bg-white/10"
-                          }`}
-                        >
-                          <div className="font-medium">{nivel.label}</div>
-                          <div className="text-xs opacity-80 mt-1">{nivel.description}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Descripción */}
-                  <div>
-                    <label className="block text-sm font-medium mb-3">Descripción de la Alerta *</label>
-                    <textarea
-                      value={alertData.descripcion}
-                      onChange={(e) => handleInputChange("descripcion", e.target.value)}
-                      rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-                      placeholder="Describe la situación de riesgo identificada..."
-                      required
+              {/* Estado de Revisión */}
+              <div className="flex items-center">
+                <label className="flex items-center cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      name="revisada"
+                      checked={formData.revisada}
+                      onChange={handleInputChange}
+                      className="sr-only"
                     />
+                    <div className={`block w-14 h-8 rounded-full ${formData.revisada ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${formData.revisada ? 'transform translate-x-6' : ''}`}></div>
                   </div>
+                  <div className="ml-3 text-sm font-medium">
+                    Marcar como revisada
+                  </div>
+                </label>
+              </div>
+            </div>
 
-                  {/* Factores de Riesgo */}
-                  <div>
-                    <label className="block text-sm font-medium mb-3">Factores de Riesgo Identificados</label>
-                    
-                    {/* Factores seleccionados */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {alertData.factores.map((factor, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm"
-                        >
-                          {factor}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFactor(factor)}
-                            className="ml-2 text-white/60 hover:text-white"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </span>
-                      ))}
-                    </div>
+            {/* Descripción */}
+            <div className="mt-6">
+              <label htmlFor="descripcion" className="block text-sm font-medium mb-2">
+                Descripción *
+              </label>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all resize-none"
+                placeholder="Describe la situación de riesgo del estudiante..."
+                required
+              />
+            </div>
 
-                    {/* Factores predefinidos */}
-                    <div className="mb-4">
-                      <div className="text-sm text-white/60 mb-2">Factores comunes:</div>
-                      <div className="flex flex-wrap gap-2">
-                        {FACTORES_RIESGO.slice(0, 8).map((factor, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => handleAddFactor(factor)}
-                            disabled={alertData.factores.includes(factor)}
-                            className={`px-3 py-1 rounded-lg text-sm transition-all ${
-                              alertData.factores.includes(factor)
-                                ? "bg-[#F8F0AF] text-[#002930]"
-                                : "bg-white/5 hover:bg-white/10 border border-white/10"
-                            }`}
-                          >
-                            {factor}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Factor personalizado */}
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={alertData.factorInput}
-                        onChange={(e) => handleInputChange("factorInput", e.target.value)}
-                        placeholder="Agregar factor personalizado..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomFactor())}
-                      />
+            {/* Factores de Riesgo */}
+            <div className="mt-6">
+              <label className="block text-sm font-medium mb-2">
+                Factores de Riesgo *
+              </label>
+              <div className="space-y-3">
+                {formData.factores.map((factor, index) => (
+                  <div key={index} className="flex gap-3">
+                    <input
+                      type="text"
+                      value={factor}
+                      onChange={(e) => handleFactorChange(index, e.target.value)}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
+                      placeholder={`Factor de riesgo ${index + 1}`}
+                    />
+                    {formData.factores.length > 1 && (
                       <button
                         type="button"
-                        onClick={handleAddCustomFactor}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/10"
+                        onClick={() => removeFactor(index)}
+                        className="px-4 py-3 bg-red-500/20 text-red-300 rounded-xl hover:bg-red-500/30 transition-colors border border-red-500/30"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Observaciones adicionales */}
-                  <div>
-                    <label className="block text-sm font-medium mb-3">Observaciones Adicionales</label>
-                    <textarea
-                      value={alertData.observaciones}
-                      onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                      rows={4}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-                      placeholder="Información adicional, contexto específico, recomendaciones..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-3">
-                  <Link
-                    href="/core/alerts"
-                    className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10"
-                  >
-                    Cancelar
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="px-6 py-3 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-all border border-red-500/30 disabled:opacity-50 flex items-center"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-300 mr-2"></div>
-                        Eliminando...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Eliminar Alerta
-                      </>
+                      </button>
                     )}
-                  </button>
-                </div>
-                
+                  </div>
+                ))}
                 <button
-                  type="submit"
-                  disabled={!selectedStudent || isSubmitting}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#F8F0AF]/30 disabled:opacity-50 disabled:transform-none flex items-center"
+                  type="button"
+                  onClick={addFactor}
+                  className="inline-flex items-center px-4 py-2 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-colors border border-white/10"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#002930] mr-2"></div>
-                      Guardando Cambios...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Guardar Cambios
-                    </>
-                  )}
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Agregar Factor
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+
+            {/* Observaciones */}
+            <div className="mt-6">
+              <label htmlFor="observaciones" className="block text-sm font-medium mb-2">
+                Observaciones
+              </label>
+              <textarea
+                id="observaciones"
+                name="observaciones"
+                value={formData.observaciones}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all resize-none"
+                placeholder="Observaciones adicionales sobre la alerta..."
+              />
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-end mt-8 pt-6 border-t border-white/10">
+              <Link
+                href="/core/alerts"
+                className="px-6 py-3 bg-white/5 text-white rounded-xl hover:bg-white/10 transition-all border border-white/10 text-center"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-3 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#002930] mr-2"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Guardar Cambios
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

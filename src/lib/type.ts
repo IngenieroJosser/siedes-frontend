@@ -497,7 +497,9 @@ export interface Alert {
   factores: string[];
   creadaEn: string;
   revisada: boolean;
+  observaciones?: string;
   fechaRevision?: string;
+  edad: string;
   estudiante?: {
     id: string;
     usuario: {
@@ -506,6 +508,8 @@ export interface Alert {
       apellido: string;
       email: string;
       telefono?: string;
+      grado?: string;
+      edad?: string;
     };
     institucion: {
       id: string;
@@ -534,6 +538,7 @@ export interface UpdateAlertData {
   factores?: string[];
   revisada?: boolean;
   fechaRevision?: string;
+  observaciones?: string;
 }
 
 export interface FilterAlertsParams {

@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getStudents } from "@/services/students";
-import { Student as StudentType } from "@/lib/type";
-import { deleteAlert, markAlertAsReviewed } from "@/services/alerts";
+import { getAlerts, markAlertAsReviewed, deleteAlert, getAlertsStats } from "@/services/alerts";
+import { Alert as AlertType } from "@/lib/type";
 
-type Student = StudentType;
+type Alert = AlertType;
 
-// Funciones auxiliares
+// Funciones auxiliares (se mantienen igual)
 const getEthnicityLabel = (etnia: string) => {
   switch (etnia) {
     case "AFRODESCENDIENTE": return "Afrodescendiente";
@@ -80,50 +79,49 @@ const getRiskIcon = (riesgoDesercion: number) => {
   }
 };
 
-// Simulación de datos de alertas (deberías reemplazar con tu API real)
-const generateMockAlerts = (students: Student[]) => {
-  return students
-    .filter(student => getNivelRiesgo(student.riesgoDesercion) === "CRITICO" || getNivelRiesgo(student.riesgoDesercion) === "ALTO")
-    .map(student => {
-      const nivelRiesgo = getNivelRiesgo(student.riesgoDesercion);
-      const factores = [];
-      
-      // Generar factores de riesgo basados en el contexto
-      if (student.contexto) {
-        if (student.contexto.trabaja) factores.push("Trabaja mientras estudia");
-        if (!student.contexto.accesoInternet) factores.push("Sin acceso a internet");
-        if (!student.contexto.apoyoFamiliar) factores.push("Falta de apoyo familiar");
-        if (student.contexto.distanciaEscuela > 5) factores.push("Larga distancia a la escuela");
-        if (student.contexto.ingresosFamiliares && student.contexto.ingresosFamiliares < 500000) factores.push("Bajos ingresos familiares");
-      }
-      
-      // Factores por etnia
-      if (student.etnia !== "NINGUNA") {
-        factores.push(`Pertenece a comunidad ${getEthnicityLabel(student.etnia).toLowerCase()}`);
-      }
-      
-      // Factores académicos
-      if (student.riesgoDesercion > 0.7) {
-        factores.push("Bajo rendimiento académico");
-      }
-      
-      return {
-        id: `${student.id}`, // o alert- `alert-${student.id}`
-        estudianteId: student.id,
-        nivelRiesgo: nivelRiesgo as "CRITICO" | "ALTO" | "MEDIO" | "BAJO",
-        descripcion: `Alerta de deserción ${nivelRiesgo.toLowerCase()} para ${student.usuario.nombre} ${student.usuario.apellido}`,
-        factores: factores.length > 0 ? factores : ["Factores múltiples de riesgo identificados"],
-        creadaEn: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Últimos 7 días
-        revisada: Math.random() > 0.7, // 30% revisadas
-        fechaRevision: Math.random() > 0.7 ? new Date().toISOString() : undefined,
-        estudiante: student
-      };
-    });
+// Función para obtener el color basado en el nivel de riesgo de la alerta
+const getAlertRiskColor = (nivelRiesgo: string) => {
+  switch (nivelRiesgo) {
+    case "CRITICO": return "bg-red-600";
+    case "ALTO": return "bg-orange-500";
+    case "MEDIO": return "bg-yellow-500";
+    case "BAJO": return "bg-green-500";
+    default: return "bg-gray-500";
+  }
+};
+
+// Función para obtener el icono basado en el nivel de riesgo de la alerta
+const getAlertRiskIcon = (nivelRiesgo: string) => {
+  switch (nivelRiesgo) {
+    case "CRITICO":
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+      );
+    case "ALTO":
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        </svg>
+      );
+    case "MEDIO":
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+      );
+  }
 };
 
 export default function AlertsPage() {
-  const [_, setStudents] = useState<Student[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -135,38 +133,37 @@ export default function AlertsPage() {
   const [deletingAlertId, setDeletingAlertId] = useState<string | null>(null);
   const [reviewingAlertId, setReviewingAlertId] = useState<string | null>(null);
 
-  // Cargar estudiantes y generar alertas
+  // Cargar alertas desde la API
   useEffect(() => {
-    const loadData = async () => {
+    const loadAlerts = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const studentsData = await getStudents();
-        setStudents(studentsData);
-        
-        // Generar alertas mock (reemplazar con tu API real)
-        const mockAlerts = generateMockAlerts(studentsData);
-        setAlerts(mockAlerts);
+
+        // Obtener alertas con filtros
+        const alertsData = await getAlerts();
+        setAlerts(alertsData || []);
+
       } catch (error) {
-        console.error("Error cargando datos:", error);
+        console.error("Error cargando alertas:", error);
         setError("Error al cargar las alertas. Por favor, intenta nuevamente.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadData();
+    loadAlerts();
   }, []);
 
   // Obtener instituciones únicas de las alertas
   const institutions = useMemo(() => {
     const uniqueInstitutions = alerts.reduce((acc: any[], alert) => {
-      if (alert.estudiante.institucion && !acc.find(inst => inst.id === alert.estudiante.institucion.id)) {
+      if (alert.estudiante?.institucion && !acc.find(inst => inst.id === alert.estudiante?.institucion?.id)) {
         acc.push(alert.estudiante.institucion);
       }
       return acc;
     }, []);
-    
+
     return [
       { id: "all", nombre: "Todas las instituciones" },
       ...uniqueInstitutions
@@ -179,12 +176,13 @@ export default function AlertsPage() {
 
     // Filtro de búsqueda
     if (searchTerm) {
-      result = result.filter(alert => 
-        `${alert.estudiante.usuario?.nombre || ''} ${alert.estudiante.usuario?.apellido || ''}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        alert.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      result = result.filter(alert => {
+        const nombreCompleto = `${alert.estudiante?.usuario?.nombre || ''} ${alert.estudiante?.usuario?.apellido || ''}`;
+        return (
+          nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          alert.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
     }
 
     // Filtro por nivel de riesgo
@@ -194,14 +192,14 @@ export default function AlertsPage() {
 
     // Filtro por estado (revisada/no revisada)
     if (statusFilter !== "all") {
-      result = result.filter(alert => 
+      result = result.filter(alert =>
         statusFilter === "revisada" ? alert.revisada : !alert.revisada
       );
     }
 
     // Filtro por institución
     if (institutionFilter !== "all") {
-      result = result.filter(alert => alert.estudiante.institucion?.id === institutionFilter);
+      result = result.filter(alert => alert.estudiante?.institucion?.id === institutionFilter);
     }
 
     return result;
@@ -225,7 +223,7 @@ export default function AlertsPage() {
     const alto = alerts.filter(a => a.nivelRiesgo === "ALTO").length;
     const revisadas = alerts.filter(a => a.revisada).length;
     const pendientes = total - revisadas;
-    
+
     return { total, critico, alto, revisadas, pendientes };
   }, [alerts]);
 
@@ -233,13 +231,16 @@ export default function AlertsPage() {
   const handleMarkAsReviewed = async (alertId: string) => {
     setReviewingAlertId(alertId);
     try {
-      // Si estás usando la API real, descomenta esta línea:
-      // await markAlertAsReviewed(alertId);
-      
-      // Por ahora, actualizamos el estado local
-      setAlerts(prev => prev.map(alert => 
-        alert.id === alertId 
-          ? { ...alert, revisada: true, fechaRevision: new Date().toISOString() }
+      await markAlertAsReviewed(alertId);
+
+      // Actualizar el estado local
+      setAlerts(prev => prev.map(alert =>
+        alert.id === alertId
+          ? {
+            ...alert,
+            revisada: true,
+            fechaRevision: new Date().toISOString()
+          }
           : alert
       ));
     } catch (error) {
@@ -258,10 +259,9 @@ export default function AlertsPage() {
 
     setDeletingAlertId(alertId);
     try {
-      // Si estás usando la API real, descomenta esta línea:
-      // await deleteAlert(alertId);
-      
-      // Por ahora, actualizamos el estado local
+      await deleteAlert(alertId);
+
+      // Actualizar el estado local
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
     } catch (error) {
       console.error("Error eliminando alerta:", error);
@@ -326,6 +326,17 @@ export default function AlertsPage() {
         {/* Header */}
         <div className="pt-18 flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
+            <Link
+              href="/core"
+              className="mt-6 mb-4 group inline-flex items-center px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 border border-white/10 hover:border-[#F8F0AF]/30 hover:scale-105"
+            >
+              <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span className="group-hover:text-[#F8F0AF] transition-colors duration-300">
+                Volver al dashboard
+              </span>
+            </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
               Sistema de Alertas Tempranas
             </h1>
@@ -426,8 +437,8 @@ export default function AlertsPage() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
               >
                 <option value="all">Todos los estados</option>
-                <option value="pendiente">Pendientes</option>
                 <option value="revisada">Revisadas</option>
+                <option value="pendiente">Pendientes</option>
               </select>
             </div>
 
@@ -454,41 +465,37 @@ export default function AlertsPage() {
             currentItems.map((alert) => (
               <div
                 key={alert.id}
-                className={`bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border overflow-hidden transition-all hover:scale-[1.02] hover:shadow-2xl ${
-                  alert.nivelRiesgo === "CRITICO" 
-                    ? "border-red-500/50 hover:shadow-red-500/20" 
+                className={`bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border overflow-hidden transition-all hover:scale-[1.02] hover:shadow-2xl ${alert.nivelRiesgo === "CRITICO"
+                    ? "border-red-500/50 hover:shadow-red-500/20"
                     : alert.nivelRiesgo === "ALTO"
-                    ? "border-orange-500/50 hover:shadow-orange-500/20"
-                    : "border-yellow-500/50 hover:shadow-yellow-500/20"
-                }`}
+                      ? "border-orange-500/50 hover:shadow-orange-500/20"
+                      : "border-yellow-500/50 hover:shadow-yellow-500/20"
+                  }`}
               >
                 {/* Header de la alerta */}
-                <div className={`p-4 ${
-                  alert.nivelRiesgo === "CRITICO" 
-                    ? "bg-red-500/20" 
+                <div className={`p-4 ${alert.nivelRiesgo === "CRITICO"
+                    ? "bg-red-500/20"
                     : alert.nivelRiesgo === "ALTO"
-                    ? "bg-orange-500/20"
-                    : "bg-yellow-500/20"
-                }`}>
+                      ? "bg-orange-500/20"
+                      : "bg-yellow-500/20"
+                  }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className={`p-2 rounded-lg ${
-                        alert.nivelRiesgo === "CRITICO" 
-                          ? "bg-red-500 text-white" 
+                      <div className={`p-2 rounded-lg ${alert.nivelRiesgo === "CRITICO"
+                          ? "bg-red-500 text-white"
                           : alert.nivelRiesgo === "ALTO"
-                          ? "bg-orange-500 text-white"
-                          : "bg-yellow-500 text-[#002930]"
-                      }`}>
-                        {getRiskIcon(alert.estudiante.riesgoDesercion)}
+                            ? "bg-orange-500 text-white"
+                            : "bg-yellow-500 text-[#002930]"
+                        }`}>
+                        {getAlertRiskIcon(alert.nivelRiesgo)}
                       </div>
                       <div className="ml-3">
-                        <div className={`font-bold ${
-                          alert.nivelRiesgo === "CRITICO" 
-                            ? "text-red-300" 
+                        <div className={`font-bold ${alert.nivelRiesgo === "CRITICO"
+                            ? "text-red-300"
                             : alert.nivelRiesgo === "ALTO"
-                            ? "text-orange-300"
-                            : "text-yellow-300"
-                        }`}>
+                              ? "text-orange-300"
+                              : "text-yellow-300"
+                          }`}>
                           {alert.nivelRiesgo}
                         </div>
                         <div className="text-sm text-white/70">
@@ -496,11 +503,10 @@ export default function AlertsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      alert.revisada 
-                        ? "bg-green-500/20 text-green-300 border border-green-500/30" 
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${alert.revisada
+                        ? "bg-green-500/20 text-green-300 border border-green-500/30"
                         : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                    }`}>
+                      }`}>
                       {alert.revisada ? "Revisada" : "Pendiente"}
                     </div>
                   </div>
@@ -512,18 +518,18 @@ export default function AlertsPage() {
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-3">
                       <span className="font-bold text-[#002930] text-sm">
-                        {alert.estudiante.usuario?.nombre?.charAt(0) || ''}{alert.estudiante.usuario?.apellido?.charAt(0) || ''}
+                        {alert.estudiante?.usuario?.nombre?.charAt(0) || ''}{alert.estudiante?.usuario?.apellido?.charAt(0) || ''}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="font-medium">
-                        {alert.estudiante.usuario?.nombre || ''} {alert.estudiante.usuario?.apellido || ''}
+                        {alert.estudiante?.usuario?.nombre || ''} {alert.estudiante?.usuario?.apellido || ''}
                       </div>
                       <div className="text-sm text-white/60">
-                        {alert.estudiante.grado} • {alert.estudiante.edad} años
+                        {alert.estudiante?.usuario?.grado} • {alert.edad} años
                       </div>
                       <div className="text-sm text-white/60">
-                        {alert.estudiante.institucion?.nombre}
+                        {alert.estudiante?.institucion?.nombre}
                       </div>
                     </div>
                   </div>
@@ -531,17 +537,26 @@ export default function AlertsPage() {
                   {/* Descripción */}
                   <div className="mb-4">
                     <div className="text-sm text-white/70 mb-2">{alert.descripcion}</div>
-                    
-                    {/* Barra de progreso de riesgo */}
+
+                    {/* Barra de progreso de riesgo - ELIMINADA ya que riesgoDesercion no existe en la interfaz */}
+                    {/* Si necesitas mostrar el riesgo, puedes usar el nivelRiesgo de la alerta directamente */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
-                        <span>Probabilidad de deserción</span>
-                        <span className="font-bold">{(alert.estudiante.riesgoDesercion * 100).toFixed(0)}%</span>
+                        <span>Nivel de riesgo</span>
+                        <span className="font-bold">{alert.nivelRiesgo}</span>
                       </div>
                       <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                        <div 
-                          className={`h-2 rounded-full ${getRiskColor(alert.estudiante.riesgoDesercion)}`} 
-                          style={{ width: `${alert.estudiante.riesgoDesercion * 100}%` }}
+                        <div
+                          className={`h-2 rounded-full ${alert.nivelRiesgo === "CRITICO" ? "bg-red-600" :
+                              alert.nivelRiesgo === "ALTO" ? "bg-orange-500" :
+                                alert.nivelRiesgo === "MEDIO" ? "bg-yellow-500" : "bg-green-500"
+                            }`}
+                          style={{
+                            width: `${alert.nivelRiesgo === "CRITICO" ? 100 :
+                                alert.nivelRiesgo === "ALTO" ? 75 :
+                                  alert.nivelRiesgo === "MEDIO" ? 50 : 25
+                              }%`
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -552,7 +567,7 @@ export default function AlertsPage() {
                     <div className="text-sm font-medium mb-2 text-white/80">Factores identificados:</div>
                     <div className="flex flex-wrap gap-1">
                       {alert.factores.slice(0, 3).map((factor: string, index: number) => (
-                        <span 
+                        <span
                           key={index}
                           className="px-2 py-1 bg-white/5 rounded-lg text-xs text-white/70 border border-white/10"
                         >
@@ -571,7 +586,7 @@ export default function AlertsPage() {
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <div className="flex space-x-2">
                       <Link
-                        href={`/core/students/${alert.estudiante.id}`}
+                        href={`/core/students/${alert.estudianteId}`}
                         className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         title="Ver estudiante"
                       >
@@ -589,7 +604,7 @@ export default function AlertsPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </Link>
-                      {/* <button 
+                      <button
                         onClick={() => handleDeleteAlert(alert.id)}
                         disabled={deletingAlertId === alert.id}
                         className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-colors disabled:opacity-50"
@@ -602,9 +617,9 @@ export default function AlertsPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         )}
-                      </button> */}
+                      </button>
                     </div>
-                    
+
                     {!alert.revisada && (
                       <button
                         onClick={() => handleMarkAsReviewed(alert.id)}
@@ -635,8 +650,8 @@ export default function AlertsPage() {
                 </div>
                 <h3 className="text-xl font-medium mb-2">No hay alertas activas</h3>
                 <p className="text-white/60 mb-6">
-                  {alerts.length === 0 
-                    ? "No se han generado alertas en el sistema" 
+                  {alerts.length === 0
+                    ? "No se han generado alertas en el sistema"
                     : "No se encontraron alertas con los filtros aplicados"
                   }
                 </p>
@@ -674,11 +689,10 @@ export default function AlertsPage() {
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1 rounded-lg transition-colors ${
-                    currentPage === page 
-                      ? 'bg-[#AC4A00] text-white' 
+                  className={`px-3 py-1 rounded-lg transition-colors ${currentPage === page
+                      ? 'bg-[#AC4A00] text-white'
                       : 'bg-white/5 hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
