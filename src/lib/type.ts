@@ -642,3 +642,7 @@ export interface InterventionsStatsResponse {
     efectividadPromedio: number;
   };
 }
+
+// Agrega esto temporalmente si no existen los tipos
+export type TipoIntervencion = "ACADEMICA" | "PSICOLOGICA" | "ECONOMICA" | "FAMILIAR" | "COMUNITARIA" | "CULTURAL" | "TUTORIA" | "OTRA";
+export type EstadoIntervencion = "ACTIVA" | "COMPLETADA" | "SUSPENDIDA" | "CANCELADA";
