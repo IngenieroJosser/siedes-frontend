@@ -74,9 +74,9 @@ export default function Footer() {
             © {new Date().getFullYear()} SIEDES. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-6 mt-4 md:mt-0">
-            <Link href="#" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Privacidad</Link>
-            <Link href="#" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Términos</Link>
-            <Link href="#" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Accesibilidad</Link>
+            <Link href="/privacidad" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Privacidad</Link>
+            <Link href="/terminos" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Términos</Link>
+            <Link href="/accesibilidad" className="text-white/60 hover:text-[#F8F0AF] text-sm transition-colors">Accesibilidad</Link>
           </div>
         </div>
       </div>
