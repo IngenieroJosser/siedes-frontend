@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { DM_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/navbar";
 import Footer from "@/footer";
 
 // Fuente personalizada
-const dmMono = DM_Mono({
+const dmMono = Geist({
   variable: "--font-dm-mono",
   weight: ["300", "400", "500"],
   subsets: ["latin"],
