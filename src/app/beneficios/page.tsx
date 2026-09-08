@@ -1,389 +1,326 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
-  GraduationCap,
-  UserCheck,
-  HeartHandshake,
-  Globe2,
-  AlertTriangle,
-  ClipboardCheck,
+  ArrowRight,
   BarChart3,
-  Users,
-  BookOpenText,
-  Building2,
-  TrendingDown,
-  Target,
-  FileBarChart,
-  Trophy,
   BellRing,
-  Lightbulb,
-  MessageCircle,
-  Handshake,
-  UsersRound,
-  Sprout,
-  BarChartHorizontal,
+  BookOpenCheck,
+  Building2,
+  CheckCircle2,
+  GraduationCap,
+  HeartHandshake,
+  MapPin,
   Network,
-  Globe,
-  Home,
+  ShieldCheck,
+  Target,
+  Users,
+  UsersRound,
 } from "lucide-react";
 
-export default function BenefitsPage() {
-  const [activeTab, setActiveTab] = useState("estudiantes");
+export const metadata: Metadata = {
+  title: "Beneficios de SIEDES",
+  description:
+    "Conoce cómo SIEDES puede apoyar a estudiantes, docentes, instituciones, familias y comunidades en estrategias de permanencia escolar.",
+};
 
+const audiences = [
+  {
+    number: "01",
+    id: "estudiantes",
+    icon: <GraduationCap className="h-6 w-6" />,
+    label: "Estudiantes",
+    title: "Acompañamiento antes de que el riesgo se convierta en abandono.",
+    description:
+      "SIEDES busca hacer visibles señales que pueden pasar desapercibidas y facilitar una respuesta más oportuna, contextualizada y humana.",
+    points: [
+      "Identificación temprana de cambios relevantes en la trayectoria escolar",
+      "Seguimiento organizado de alertas e intervenciones",
+      "Lectura del riesgo dentro del contexto personal, familiar y territorial",
+      "Acompañamiento orientado a la permanencia educativa",
+    ],
+  },
+  {
+    number: "02",
+    id: "docentes",
+    icon: <BookOpenCheck className="h-6 w-6" />,
+    label: "Docentes",
+    title: "Más contexto para priorizar y acompañar mejor.",
+    description:
+      "La plataforma puede concentrar señales académicas y contextuales para apoyar la observación pedagógica y la coordinación con otros actores.",
+    points: [
+      "Alertas priorizadas para orientar la revisión de casos",
+      "Información contextual disponible en un mismo flujo",
+      "Registro de acciones y seguimiento",
+      "Mejor coordinación con orientación, familias y redes de apoyo",
+    ],
+  },
+  {
+    number: "03",
+    id: "instituciones",
+    icon: <Building2 className="h-6 w-6" />,
+    label: "Instituciones",
+    title: "Una visión más estructurada de la permanencia escolar.",
+    description:
+      "SIEDES permite organizar señales, casos y acciones para apoyar decisiones institucionales basadas en evidencia y seguimiento.",
+    points: [
+      "Priorización de estudiantes que requieren revisión",
+      "Trazabilidad de alertas e intervenciones",
+      "Lectura agregada de patrones y factores recurrentes",
+      "Mejor focalización de recursos y capacidades institucionales",
+    ],
+  },
+  {
+    number: "04",
+    id: "familias",
+    icon: <UsersRound className="h-6 w-6" />,
+    label: "Familias",
+    title: "Mayor articulación alrededor de la trayectoria del estudiante.",
+    description:
+      "Cuando corresponde, la información puede facilitar conversaciones más oportunas entre la institución, el estudiante y su entorno familiar.",
+    points: [
+      "Participación informada en rutas de acompañamiento",
+      "Mayor claridad sobre señales que requieren atención",
+      "Coordinación con la institución educativa",
+      "Reconocimiento del contexto familiar dentro del análisis",
+    ],
+  },
+  {
+    number: "05",
+    id: "comunidad",
+    icon: <Network className="h-6 w-6" />,
+    label: "Comunidad",
+    title: "El territorio también forma parte de la solución.",
+    description:
+      "El enfoque etnoeducativo reconoce que la permanencia escolar no depende únicamente del aula y que las redes comunitarias pueden aportar contexto y capacidad de respuesta.",
+    points: [
+      "Lectura territorial de factores de vulnerabilidad",
+      "Reconocimiento de identidad y contexto cultural",
+      "Articulación con redes y actores comunitarios",
+      "Evidencia para comprender retos educativos locales",
+    ],
+  },
+];
+
+const capabilities = [
+  {
+    icon: <BellRing className="h-5 w-5" />,
+    title: "Detección temprana",
+    description:
+      "Transformar datos y cambios de trayectoria en señales que puedan revisarse antes de una posible desvinculación.",
+  },
+  {
+    icon: <BarChart3 className="h-5 w-5" />,
+    title: "Priorización basada en evidencia",
+    description:
+      "Ayudar a ordenar la atención cuando existen múltiples casos y recursos institucionales limitados.",
+  },
+  {
+    icon: <HeartHandshake className="h-5 w-5" />,
+    title: "Intervención coordinada",
+    description:
+      "Conectar la señal analítica con acciones de docentes, orientación, familias y redes de apoyo.",
+  },
+  {
+    icon: <MapPin className="h-5 w-5" />,
+    title: "Contexto etnoeducativo",
+    description:
+      "Interpretar la información considerando territorio, comunidad, identidad cultural y condiciones de vulnerabilidad.",
+  },
+];
+
+export default function BenefitsPage() {
   return (
-    <div className="min-h-screen bg-[#002930] text-white pt-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 md:py-24">
-        <div className="absolute inset-0 overflow-hidden opacity-10">
-          <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#F8F0AF] blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-[#AC4A00] blur-3xl"></div>
+    <div className="min-h-screen overflow-hidden bg-[#002930] text-white">
+      <section className="relative isolate border-b border-white/10">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(248,240,175,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(248,240,175,0.04)_1px,transparent_1px)] bg-[size:72px_72px]" />
+          <div className="absolute -right-36 -top-40 h-[34rem] w-[34rem] rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute -bottom-36 -left-36 h-[28rem] w-[28rem] bg-[#AC4A00]/10 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-6xl px-4 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-[#F8F0AF] ring-1 ring-white/10 mb-6">
-            <span className="h-2 w-2 rounded-full bg-[#F8F0AF] animate-pulse"></span>
-            Beneficios transformadores
-          </span>
+        <div className="mx-auto grid max-w-7xl gap-14 px-5 py-20 sm:px-6 md:py-28 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:px-8">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="border border-[#F8F0AF]/25 bg-[#F8F0AF]/5 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+                Beneficios
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-white/35">
+                05 actores · 01 propósito
+              </span>
+            </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            Impacto positivo para toda la
-            <span className="block text-[#F8F0AF] mt-2">comunidad educativa</span>
-          </h1>
+            <h1 className="mt-8 max-w-5xl text-[clamp(3.4rem,8vw,7rem)] font-medium leading-[0.9] tracking-[-0.055em]">
+              Tecnología que
+              <span className="block text-[#F8F0AF]">amplía la capacidad</span>
+              <span className="block">de acompañar.</span>
+            </h1>
 
-          <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto">
-            Descubre cómo SIEDES beneficia a cada actor del proceso educativo con soluciones específicas y culturalmente relevantes.
-          </p>
+            <p className="mt-8 max-w-3xl border-t border-white/10 pt-7 text-base leading-7 text-white/65 md:text-lg">
+              El valor de SIEDES no está en producir un puntaje. Está en ayudar a
+              que estudiantes, docentes, instituciones, familias y comunidad
+              puedan interpretar señales y actuar con mayor oportunidad.
+            </p>
+          </div>
+
+          <div className="border border-white/10 bg-[#001c22]/80 p-6 md:p-8">
+            <div className="flex items-center justify-between border-b border-white/10 pb-5">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+                  Propuesta de valor
+                </p>
+                <h2 className="mt-2 text-2xl font-medium">
+                  De la información a una respuesta coordinada
+                </h2>
+              </div>
+              <Target className="h-6 w-6 text-[#F8F0AF]" />
+            </div>
+
+            <div className="mt-2">
+              {[
+                ["01", "Ver", "Detectar señales relevantes"],
+                ["02", "Priorizar", "Ordenar la atención"],
+                ["03", "Comprender", "Incorporar contexto"],
+                ["04", "Actuar", "Coordinar acompañamiento"],
+              ].map(([number, label, value]) => (
+                <div
+                  key={number}
+                  className="grid grid-cols-[2rem_5rem_1fr] items-center gap-3 border-b border-white/10 py-4 last:border-b-0"
+                >
+                  <span className="text-[10px] tracking-[0.16em] text-[#F8F0AF]">
+                    {number}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">
+                    {label}
+                  </span>
+                  <span className="text-sm text-white/70">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Tabs de navegación */}
-      <section className="py-8 bg-gradient-to-b from-[#002930] to-[#001c22] sticky top-16 z-10 border-y border-white/5">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex flex-wrap justify-center gap-2">
-            {[
-              { id: "estudiantes", label: "Estudiantes" },
-              { id: "docentes", label: "Docentes" },
-              { id: "instituciones", label: "Instituciones" },
-              { id: "familias", label: "Familias" },
-              { id: "comunidad", label: "Comunidad" }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id
-                    ? "bg-[#F8F0AF] text-[#002930] shadow-lg shadow-[#F8F0AF]/20"
-                    : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                  }`}
+      <section className="border-b border-[#002930]/15 bg-[#F8F0AF] text-[#002930]">
+        <div className="mx-auto max-w-7xl overflow-x-auto px-5 sm:px-6 lg:px-8">
+          <nav className="flex min-w-max" aria-label="Beneficios por actor">
+            {audiences.map((audience) => (
+              <a
+                key={audience.id}
+                href={"#" + audience.id}
+                className="group flex min-w-[190px] items-center gap-3 border-r border-[#002930]/15 px-5 py-5 first:border-l transition hover:bg-white/30"
               >
-                {tab.label}
-              </button>
+                <span className="text-[10px] tracking-[0.18em] text-[#AC4A00]">
+                  {audience.number}
+                </span>
+                <span className="text-xs font-medium">{audience.label}</span>
+                <ArrowRight className="ml-auto h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </a>
+            ))}
+          </nav>
+        </div>
+      </section>
+
+      <section className="border-b border-white/10 bg-[#001c22] py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-4">
+            {capabilities.map((item, index) => (
+              <CapabilityCard
+                key={item.title}
+                number={index + 1}
+                {...item}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Contenido de beneficios */}
-      <section className="py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          {/* Estudiantes */}
-          {activeTab === "estudiantes" && (
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">
-                  Beneficios para <span className="text-[#F8F0AF]">estudiantes</span>
-                </h2>
+      <section className="bg-[#002930]">
+        <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 md:py-28 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-[.68fr_1.32fr] lg:gap-20">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-[#F8F0AF]">
+                Beneficio compartido
+              </p>
+              <h2 className="mt-5 text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-5xl">
+                Una misma señal puede activar capacidades distintas.
+              </h2>
+              <p className="mt-6 max-w-lg text-sm leading-6 text-white/55">
+                SIEDES organiza la información para que cada actor pueda intervenir
+                desde su rol, sin convertir el análisis predictivo en una decisión
+                automática.
+              </p>
 
-                <div className="space-y-6">
-                  <BenefitItem
-                    icon={<GraduationCap className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Continuidad educativa garantizada"
-                    description="Detección temprana de factores de riesgo que puedan afectar tu permanencia en el sistema educativo."
-                  />
-                  <BenefitItem
-                    icon={<UserCheck className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Seguimiento personalizado"
-                    description="Acompañamiento basado en tus necesidades específicas y contexto cultural."
-                  />
-                  <BenefitItem
-                    icon={<HeartHandshake className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Apoyo integral"
-                    description="Acceso a recursos académicos, psicoafectivos y socioeconómicos según tus necesidades."
-                  />
-                  <BenefitItem
-                    icon={<Globe2 className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Identidad cultural fortalecida"
-                    description="Contenidos y enfoques que valoran y fortalecen tu identidad afrocolombiana."
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                  <div className="h-full w-full rounded-xl bg-[#002029] flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <GraduationCap className="w-16 h-16 text-[#F8F0AF] mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-[#F8F0AF] mb-2">
-                        Enfoque centrado en el estudiante
-                      </h3>
-                      <p className="text-white/80">
-                        Nuestro sistema prioriza el bienestar y desarrollo integral de cada estudiante, adaptándose a sus realidades y contextos específicos.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <div className="mt-9 flex items-start gap-3 border-l border-[#F8F0AF]/20 pl-5">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#F8F0AF]" />
+                <p className="text-sm leading-6 text-white/65">
+                  El acompañamiento debe conservar criterio humano, protección de
+                  datos y lectura contextual durante todo el proceso.
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Docentes */}
-          {activeTab === "docentes" && (
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">
-                  Beneficios para <span className="text-[#F8F0AF]">docentes</span>
-                </h2>
-
-                <div className="space-y-6">
-                  <BenefitItem
-                    icon={<AlertTriangle className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Alertas tempranas"
-                    description="Notificaciones predictivas sobre estudiantes en riesgo de deserción, con hasta 6 meses de anticipación."
-                  />
-                  <BenefitItem
-                    icon={<ClipboardCheck className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Herramientas de intervención"
-                    description="Estrategias pedagógicas contextualizadas y culturalmente relevantes para cada caso."
-                  />
-                  <BenefitItem
-                    icon={<BarChart3 className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Seguimiento de impacto"
-                    description="Dashboard interactivo para monitorear el progreso de tus estudiantes y el éxito de las intervenciones."
-                  />
-                  <BenefitItem
-                    icon={<Users className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Trabajo colaborativo"
-                    description="Conexión con equipos psicosociales, familias y otros docentes para abordajes integrales."
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                  <div className="h-full w-full rounded-xl bg-[#002029] flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <BookOpenText className="w-16 h-16 text-[#F8F0AF] mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-[#F8F0AF] mb-2">
-                        Empoderamiento docente
-                      </h3>
-                      <p className="text-white/80">
-                        Transformamos datos en insights accionables que potencian tu labor educativa y te convierten en agente de cambio.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="border-t border-white/10">
+              {audiences.map((audience) => (
+                <AudienceSection key={audience.id} audience={audience} />
+              ))}
             </div>
-          )}
-
-          {/* Instituciones */}
-          {activeTab === "instituciones" && (
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">
-                  Beneficios para <span className="text-[#F8F0AF]">instituciones</span>
-                </h2>
-
-                <div className="space-y-6">
-                  <BenefitItem
-                    icon={<TrendingDown className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Reducción de deserción"
-                    description="Disminución de hasta 25% en tasas de abandono escolar mediante intervenciones tempranas."
-                  />
-                  <BenefitItem
-                    icon={<Target className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Optimización de recursos"
-                    description="Asignación eficiente de recursos hacia los estudiantes y áreas que más lo necesitan."
-                  />
-                  <BenefitItem
-                    icon={<FileBarChart className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Reportes y analytics"
-                    description="Acceso a datos agregados y tendencias para la toma de decisiones institucionales."
-                  />
-                  <BenefitItem
-                    icon={<Trophy className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Cumplimiento de metas"
-                    description="Sistema de monitoreo para el cumplimiento de objetivos educativos y metas de permanencia."
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                  <div className="h-full w-full rounded-xl bg-[#002029] flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <Building2 className="w-16 h-16 text-[#F8F0AF] mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-[#F8F0AF] mb-2">
-                        Gestión educativa transformadora
-                      </h3>
-                      <p className="text-white/80">
-                        Convierta su institución en un espacio de permanencia y éxito estudiantil con herramientas de vanguardia.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Familias */}
-          {activeTab === "familias" && (
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">
-                  Beneficios para <span className="text-[#F8F0AF]">familias</span>
-                </h2>
-
-                <div className="space-y-6">
-                  <BenefitItem
-                    icon={<BellRing className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Alertas y acompañamiento"
-                    description="Notificaciones sobre posibles riesgos y acompañamiento para superar dificultades."
-                  />
-                  <BenefitItem
-                    icon={<Lightbulb className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Herramientas de apoyo"
-                    description="Recursos y guías para fortalecer el acompañamiento familiar en el proceso educativo."
-                  />
-                  <BenefitItem
-                    icon={<MessageCircle className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Comunicación directa"
-                    description="Conexión constante con docentes e institución para monitorear el progreso educativo."
-                  />
-                  <BenefitItem
-                    icon={<Handshake className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Redes de apoyo"
-                    description="Integración a comunidades de familias que enfrentan desafíos similares."
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                  <div className="h-full w-full rounded-xl bg-[#002029] flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <UsersRound className="w-16 h-16 text-[#F8F0AF] mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-[#F8F0AF] mb-2">
-                        Familias como pilares educativos
-                      </h3>
-                      <p className="text-white/80">
-                        Fortalecemos su rol fundamental en el proceso educativo con información oportuna y herramientas prácticas.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Comunidad */}
-          {activeTab === "comunidad" && (
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-6">
-                  Beneficios para la <span className="text-[#F8F0AF]">comunidad</span>
-                </h2>
-
-                <div className="space-y-6">
-                  <BenefitItem
-                    icon={<Sprout className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Desarrollo comunitario"
-                    description="Fortalecimiento del capital social a través de la retención escolar y formación de talento local."
-                  />
-                  <BenefitItem
-                    icon={<BarChartHorizontal className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Datos para la incidencia"
-                    description="Evidencia concreta sobre desafíos educativos para gestionar políticas públicas locales."
-                  />
-                  <BenefitItem
-                    icon={<Network className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Redes colaborativas"
-                    description="Articulación entre actores comunitarios para abordar la deserción escolar de manera integral."
-                  />
-                  <BenefitItem
-                    icon={<Globe className="w-8 h-8 text-[#F8F0AF]" />}
-                    title="Identidad cultural"
-                    description="Fortalecimiento de la identidad afrocolombiana a través de procesos educativos pertinentes."
-                  />
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                  <div className="h-full w-full rounded-xl bg-[#002029] flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <Home className="w-16 h-16 text-[#F8F0AF] mx-auto mb-6" />
-                      <h3 className="text-xl font-bold text-[#F8F0AF] mb-2">
-                        Comunidades educativas transformadoras
-                      </h3>
-                      <p className="text-white/80">
-                        Tejemos redes comunitarias que convierten la educación en un proyecto colectivo de transformación social.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </section>
 
-
-      {/* Sección de impacto */}
-      <section className="py-20 bg-gradient-to-b from-[#001c22] to-[#002930] border-t border-white/5">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Impacto <span className="text-[#F8F0AF]">comprobado</span>
+      <section className="border-y border-[#002930]/15 bg-[#F8F0AF] py-20 text-[#002930] md:py-28">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[1fr_.9fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#AC4A00]">
+              Resultado esperado
+            </p>
+            <h2 className="mt-5 max-w-3xl text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-6xl">
+              Más capacidad para actuar antes, no más automatización por sí sola.
             </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Los beneficios de SIEDES se traducen en resultados tangibles para la comunidad educativa de Quibdó.
+          </div>
+
+          <div className="border-l border-[#002930]/15 pl-6 md:pl-8">
+            <p className="text-base leading-7 text-[#002930]/65">
+              La plataforma está orientada a apoyar la permanencia escolar mediante
+              detección, priorización, contexto y seguimiento. Los resultados reales
+              deben medirse durante el piloto y no asumirse antes de contar con
+              evidencia.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ImpactMetric value="25%" label="Reducción en deserción escolar" />
-            <ImpactMetric value="91%" label="Tasa de asistencia estudiantil" />
-            <ImpactMetric value="78%" label="Satisfacción de docentes" />
-            <ImpactMetric value="85%" label="Familias participando activamente" />
-          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-[#00343d] to-[#001c22] border-t border-white/5">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            ¿Listo para experimentar estos <span className="text-[#F8F0AF]">beneficios</span>?
-          </h2>
-          <p className="mt-4 text-xl text-white/80">
-            Únete a las instituciones y comunidades que ya están transformando su realidad educativa con SIEDES.
-          </p>
+      <section className="relative overflow-hidden bg-[#00343d] py-20 md:py-24">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute -right-8 -top-10 h-48 w-48 rounded-full border border-[#F8F0AF]/10" />
+        </div>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="relative mx-auto grid max-w-7xl items-end gap-10 px-5 sm:px-6 lg:grid-cols-[1fr_auto] lg:px-8">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#F8F0AF]">
+              Siguiente paso
+            </p>
+            <h2 className="mt-5 max-w-4xl text-4xl font-medium leading-[1] tracking-[-0.045em] md:text-6xl">
+              Conoce cómo estas capacidades se conectan dentro del flujo SIEDES.
+            </h2>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Link
-              href="/contacto"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#D45A10] px-6 py-4 font-medium text-white shadow-lg shadow-[#AC4A00]/30 hover:shadow-xl hover:shadow-[#AC4A00]/40 transition-all duration-300"
+              href="/como-funciona"
+              className="group inline-flex min-h-12 items-center justify-between gap-8 bg-[#F8F0AF] px-5 py-3 text-sm font-medium text-[#002930] transition hover:bg-white"
             >
-              Solicitar demostración
+              Ver cómo funciona
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
-
             <Link
-              href="/instituciones"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-4 font-medium text-white/90 hover:text-[#F8F0AF] hover:border-[#F8F0AF]/40 transition-all"
+              href="/solicitar-ayuda"
+              className="group inline-flex min-h-12 items-center justify-between gap-8 border border-white/20 px-5 py-3 text-sm font-medium text-white transition hover:border-[#F8F0AF]/50 hover:text-[#F8F0AF]"
             >
-              Ver casos de éxito
+              Solicitar apoyo
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
         </div>
@@ -392,24 +329,73 @@ export default function BenefitsPage() {
   );
 }
 
-/* Componentes auxiliares */
-function BenefitItem({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function CapabilityCard({
+  number,
+  icon,
+  title,
+  description,
+}: {
+  number: number;
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
   return (
-    <div className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-      <div className="flex-shrink-0 text-2xl">{icon}</div>
-      <div>
-        <h3 className="font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-white/80">{description}</p>
+    <article className="min-h-64 bg-[#001c22] p-6 md:p-8">
+      <div className="flex items-center justify-between">
+        <span className="flex h-10 w-10 items-center justify-center border border-[#F8F0AF]/20 text-[#F8F0AF]">
+          {icon}
+        </span>
+        <span className="text-xs text-white/25">0{number}</span>
       </div>
-    </div>
+      <h3 className="mt-10 text-xl font-medium">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-white/55">{description}</p>
+    </article>
   );
 }
 
-function ImpactMetric({ value, label }: { value: string; label: string }) {
+function AudienceSection({
+  audience,
+}: {
+  audience: (typeof audiences)[number];
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 text-center hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
-      <div className="text-3xl font-bold text-[#F8F0AF] group-hover:scale-110 transition-transform">{value}</div>
-      <div className="mt-2 text-white/80">{label}</div>
-    </div>
+    <article
+      id={audience.id}
+      className="scroll-mt-32 border-b border-white/10 py-10 last:border-b-0 md:py-14"
+    >
+      <div className="flex items-center gap-4">
+        <span className="text-xs tracking-[0.18em] text-white/30">
+          {audience.number}
+        </span>
+        <span className="h-px w-10 bg-[#AC4A00]" />
+        <span className="text-[10px] uppercase tracking-[0.18em] text-[#F8F0AF]">
+          {audience.label}
+        </span>
+      </div>
+
+      <div className="mt-8 grid gap-8 xl:grid-cols-[.9fr_1.1fr] xl:gap-12">
+        <div>
+          <div className="flex h-12 w-12 items-center justify-center border border-[#F8F0AF]/20 text-[#F8F0AF]">
+            {audience.icon}
+          </div>
+          <h3 className="mt-6 max-w-xl text-2xl font-medium leading-tight tracking-[-0.03em] md:text-3xl">
+            {audience.title}
+          </h3>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-white/55 md:text-base md:leading-7">
+            {audience.description}
+          </p>
+        </div>
+
+        <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
+          {audience.points.map((point) => (
+            <div key={point} className="flex gap-3 bg-[#002930] p-4">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#F8F0AF]" />
+              <p className="text-sm leading-6 text-white/60">{point}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </article>
   );
 }
