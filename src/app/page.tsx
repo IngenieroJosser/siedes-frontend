@@ -1,396 +1,409 @@
-"use client";
-
-import { useEffect } from "react";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import {
+  Activity,
+  ArrowRight,
+  BarChart3,
+  BellRing,
+  BookOpen,
+  BrainCircuit,
+  CheckCircle2,
+  Cpu,
+  Database,
+  GraduationCap,
+  HeartHandshake,
+  MapPin,
+  Network,
+  School,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Users,
+} from "lucide-react";
 
-export default function HomePage() {;
-  useEffect(() => {
-  }, []);
+const COLORS = {
+  ink: "#001c22",
+  deep: "#002930",
+  teal: "#00343d",
+  sand: "#F8F0AF",
+  ember: "#AC4A00",
+};
 
+const riskFactors = [
+  { label: "Asistencia", value: 72 },
+  { label: "Rendimiento", value: 61 },
+  { label: "Contexto socioeconómico", value: 54 },
+  { label: "Red de apoyo", value: 79 },
+];
+
+const dimensions = [
+  {
+    icon: <GraduationCap className="h-5 w-5" />,
+    title: "Trayectoria académica",
+    description:
+      "Asistencia, desempeño y señales de cambio que ayudan a detectar variaciones relevantes en el proceso escolar.",
+  },
+  {
+    icon: <Users className="h-5 w-5" />,
+    title: "Entorno familiar y social",
+    description:
+      "Variables contextuales que permiten interpretar el riesgo más allá de una calificación o una ausencia.",
+  },
+  {
+    icon: <MapPin className="h-5 w-5" />,
+    title: "Contexto territorial",
+    description:
+      "La lectura del riesgo considera las particularidades del territorio, la comunidad y las condiciones de vulnerabilidad.",
+  },
+  {
+    icon: <BookOpen className="h-5 w-5" />,
+    title: "Enfoque etnoeducativo",
+    description:
+      "La tecnología acompaña los procesos educativos sin desconectarlos de la identidad cultural y del contexto local.",
+  },
+];
+
+const process = [
+  {
+    number: "01",
+    icon: <Database className="h-5 w-5" />,
+    title: "Datos contextualizados",
+    description:
+      "Se integran variables académicas, sociales y contextuales para construir una lectura más completa del estudiante.",
+  },
+  {
+    number: "02",
+    icon: <BrainCircuit className="h-5 w-5" />,
+    title: "Análisis predictivo",
+    description:
+      "Los modelos identifican patrones y señales que pueden asociarse con un mayor riesgo de abandono escolar.",
+  },
+  {
+    number: "03",
+    icon: <BellRing className="h-5 w-5" />,
+    title: "Alerta temprana",
+    description:
+      "La información se traduce en alertas priorizadas para que los equipos educativos sepan dónde concentrar la atención.",
+  },
+  {
+    number: "04",
+    icon: <HeartHandshake className="h-5 w-5" />,
+    title: "Intervención y seguimiento",
+    description:
+      "Docentes, familias y comunidad pueden articular acciones y registrar el seguimiento de cada caso.",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#002930] text-white">
-      <section aria-label="Presentación" className="relative overflow-hidden">
-        {/* Elementos decorativos de fondo */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-20 w-80 h-80 rounded-full bg-[#F8F0AF] opacity-5"></div>
-          <div className="absolute -bottom-40 -left-20 w-80 h-80 rounded-full bg-[#AC4A00] opacity-5"></div>
-          <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-72 bg-[#F8F0AF] opacity-3 blur-3xl"></div>
+    <div className="min-h-screen overflow-hidden bg-[#002930] text-white">
+      <section
+        aria-label="Presentación de SIEDES"
+        className="relative isolate border-b border-white/10"
+      >
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(248,240,175,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(248,240,175,0.045)_1px,transparent_1px)] bg-[size:72px_72px]" />
+          <div className="absolute right-[-10rem] top-[-12rem] h-[34rem] w-[34rem] rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute right-[-4rem] top-[-6rem] h-[22rem] w-[22rem] rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute bottom-[-12rem] left-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[#AC4A00]/10 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-24 pt-16 md:pt-28">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div className="text-center lg:text-left">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-[#F8F0AF] ring-1 ring-white/10 mb-6">
-                <span className="h-2 w-2 rounded-full bg-[#F8F0AF] animate-pulse"></span>
-                Plataforma predictiva y culturalmente afrocentrada
-              </span>
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                Tecnología con propósito social para
-                <span className="block text-[#F8F0AF] bg-clip-text bg-gradient-to-r from-[#F8F0AF] to-[#FFD700] mt-2">
-                  Quibdó y Colombia
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-14 sm:px-6 md:pb-24 md:pt-20 lg:px-8 lg:pb-28">
+          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+            <div>
+              <div className="mb-8 flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 border border-[#F8F0AF]/25 bg-[#F8F0AF]/5 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.2em] text-[#F8F0AF]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Inteligencia para la permanencia escolar
                 </span>
+                <span className="text-xs uppercase tracking-[0.18em] text-white/45">
+                  Quibdó · Chocó
+                </span>
+              </div>
+
+              <h1 className="max-w-4xl text-[clamp(3.25rem,8vw,7.25rem)] font-medium leading-[0.88] tracking-[-0.055em] text-white">
+                Detectar antes.
+                <span className="mt-2 block text-[#F8F0AF]">Acompañar mejor.</span>
+                <span className="mt-2 block">Permanecer.</span>
               </h1>
 
-              <p className="mt-6 text-lg md:text-xl text-white/80 max-w-xl mx-auto lg:mx-0">
-                SIEDES combina inteligencia artificial, análisis predictivo y enfoque etnoeducativo para identificar y prevenir la deserción escolar en contextos de vulnerabilidad.
-              </p>
-
-              <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link
-                  href="/solicitar-ayuda"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#D45A10] px-6 py-4 text-base font-medium text-white shadow-lg shadow-[#AC4A00]/30 hover:shadow-xl hover:shadow-[#AC4A00]/40 transition-all duration-300"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  Solicitar ayuda ahora
-                </Link>
-                <Link
-                  href="/tecnologia"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-4 text-base font-medium text-white/90 hover:text-[#F8F0AF] hover:border-[#F8F0AF]/40 transition-all"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  Conocer la tecnología
-                </Link>
-              </div>
-
-              {/* Métricas mejoradas */}
-              <div className="mt-12 grid grid-cols-2 gap-5 sm:grid-cols-3 max-w-md mx-auto lg:mx-0">
-                <Metric label="Estudiantes beneficiados" value="8.000+" />
-                <Metric label="Reducción de deserción" value="25%" />
-                <Metric label="Instituciones participantes" value="12" />
-              </div>
-            </div>
-
-            {/* Visual hero mejorado */}
-            <div className="relative">
-              <div className="relative aspect-[4/3] w-full rounded-3xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-2 shadow-2xl shadow-black/30">
-                <div className="h-full w-full rounded-2xl bg-gradient-to-b from-[#002029] to-[#00151b] relative overflow-hidden">
-                  
-                  {/* Elemento decorativo de patrón cultural */}
-                  <div className="absolute inset-0 opacity-5">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#F8F0AF] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#AC4A00] rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                  </div>
-                  
-                  {/* Tarjeta de alerta predictiva */}
-                  <div className="absolute left-6 top-6 right-6 rounded-xl border border-white/10 bg-gradient-to-r from-[#002930]/80 to-[#00343d]/80 p-4 backdrop-blur">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-white/80">Predicción de riesgo</span>
-                      <span className="rounded-full bg-[#F8F0AF] px-2 py-1 text-[#002930] text-xs font-semibold">
-                        Media (48%)
-                      </span>
-                    </div>
-                    <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-                      <div className="h-2 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF]" style={{ width: "48%" }} />
-                    </div>
-                    <div className="mt-2 flex justify-between text-xs text-white/60">
-                      <span>Bajo</span>
-                      <span>Alto</span>
-                    </div>
-                  </div>
-
-                  {/* Tarjeta de datos contextuales */}
-                  <div className="absolute left-6 right-6 bottom-6 rounded-xl border border-white/10 bg-gradient-to-r from-[#002930]/80 to-[#00343d]/80 p-4 backdrop-blur">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-white/80">Indicadores clave</p>
-                        <p className="text-xl font-semibold">3 alertas</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-white/80">Intervenciones</p>
-                        <p className="text-xl font-semibold text-[#F8F0AF]">12 activas</p>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-4 gap-2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex flex-col items-center">
-                          <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                            <div 
-                              className="h-2 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF]" 
-                              style={{ width: `${25 + i * 15}%` }}
-                            ></div>
-                          </div>
-                          <span className="mt-1 text-xs text-white/60">Ind.{i}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Elemento central - visualización de datos */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-40 h-40">
-                      <div className="absolute inset-0 rounded-full border-2 border-[#F8F0AF]/20"></div>
-                      <div className="absolute inset-4 rounded-full border-2 border-[#AC4A00]/20"></div>
-                      <div className="absolute inset-8 rounded-full border-2 border-[#F8F0AF]/10"></div>
-                      
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                        <div className="text-2xl font-bold text-[#F8F0AF]">91%</div>
-                        <div className="text-xs text-white/70 mt-1">Asistencia</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Elemento decorativo flotante */}
-              <div className="absolute -bottom-5 -right-5 h-24 w-24 rotate-12 rounded-xl opacity-30">
-                <div className="h-full w-full bg-[#F8F0AF] rounded-xl" style={{
-                  mask: "radial-gradient(circle at center, black 40%, transparent 65%)",
-                  WebkitMask: "radial-gradient(circle at center, black 40%, transparent 65%)"
-                }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====== SECCIÓN CONTEXTO Y VULNERABILIDAD ====== */}
-      <section className="relative py-20 bg-gradient-to-b from-[#002930] to-[#001c22] border-t border-white/5">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-[#002930] to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[#002930] to-transparent"></div>
-        </div>
-        
-        <div className="relative mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Enfocados en contextos de <span className="text-[#F8F0AF]">vulnerabilidad</span>
-            </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Nuestra solución está diseñada específicamente para abordar los desafíos únicos que enfrentan los estudiantes en entornos con limitaciones socioeconómicas.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ContextCard 
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              }
-              title="Factores socioeconómicos"
-              description="Monitoreamos indicadores económicos familiares que pueden afectar la permanencia escolar."
-            />
-            
-            <ContextCard 
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              }
-              title="Apoyo comunitario"
-              description="Involucramos a las comunidades en el proceso de detección y prevención de la deserción."
-            />
-            
-            <ContextCard 
-              icon={
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905a3.61 3.61 0 01-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                </svg>
-              }
-              title="Identidad cultural"
-              description="Respetamos y fortalecemos la identidad cultural afro en todos nuestros procesos."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ====== CÓMO FUNCIONA MEJORADO ====== */}
-      <section id="como-funciona" className="relative py-20 bg-[#001c22] border-t border-white/5">
-        <div className="absolute inset-0 overflow-hidden opacity-10">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#F8F0AF] blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-[#AC4A00] blur-3xl"></div>
-        </div>
-        
-        <div className="relative mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Nuestro <span className="text-[#F8F0AF]">enfoque integral</span>
-            </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Combinamos tecnología avanzada con conocimiento local para crear una solución efectiva y culturalmente relevante.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            <Step
-              number="01"
-              title="Recolección de datos contextualizados"
-              desc="Recolectamos información académica, socioeconómica y cultural con enfoque étnico para entender el contexto completo de cada estudiante."
-              icon={
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              }
-            />
-            
-            <Step
-              number="02"
-              title="Análisis predictivo con IA"
-              desc="Utilizamos algoritmos de machine learning para identificar patrones de riesgo y predecir posibles casos de deserción escolar."
-              icon={
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              }
-            />
-            
-            <Step
-              number="03"
-              title="Intervenciones personalizadas"
-              desc="Diseñamos estrategias de intervención específicas para cada estudiante, involucrando a familias, docentes y comunidad."
-              icon={
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              }
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ====== SECCIÓN TECNOLOGÍA ====== */}
-      <section id="tecnologia" className="relative py-20 bg-gradient-to-b from-[#001c22] to-[#002930] border-t border-white/5">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Tecnología <span className="text-[#F8F0AF]">avanzada</span> con enfoque humano
-            </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Nuestra plataforma utiliza lo último en inteligencia artificial adaptada al contexto etnoeducativo de Quibdó.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <div className="space-y-6">
-                <TechFeature
-                  title="Algoritmos predictivos"
-                  description="Modelos de machine learning entrenados con datos locales para identificar factores de riesgo específicos de la región."
-                />
-                <TechFeature
-                  title="Dashboard interactivo"
-                  description="Interfaz intuitiva que permite a educadores visualizar alertas y realizar seguimiento a las intervenciones."
-                />
-                <TechFeature
-                  title="Privacidad y seguridad"
-                  description="Protegemos los datos sensibles con cifrado de última generación y protocolos de seguridad robustos."
-                />
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001e23] border border-white/10 p-3 shadow-2xl shadow-black/30">
-                <div className="h-full w-full rounded-xl bg-[#002029] relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 opacity-5">
-                    <div className="absolute top-0 left-0 w-20 h-20 bg-[#F8F0AF] rounded-full -translate-x-1/3 -translate-y-1/3"></div>
-                    <div className="absolute bottom-0 right-0 w-20 h-20 bg-[#AC4A00] rounded-full translate-x-1/3 translate-y-1/3"></div>
-                  </div>
-                  
-                  <div className="relative z-10 w-4/5">
-                    <div className="bg-gradient-to-r from-[#00343d] to-[#002930] border border-white/10 rounded-xl p-4 mb-4 backdrop-blur">
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="text-sm text-white/70">Predicción de riesgo</div>
-                        <div className="text-xs px-2 py-1 bg-[#F8F0AF] text-[#002930] rounded-full font-semibold">Media</div>
-                      </div>
-                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-full" style={{width: '48%'}}></div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-gradient-to-br from-[#00343d] to-[#002930] border border-white/10 rounded-xl p-3 backdrop-blur">
-                        <div className="text-xs text-white/70 mb-1">Asistencia</div>
-                        <div className="text-lg font-bold text-[#F8F0AF]">91%</div>
-                      </div>
-                      <div className="bg-gradient-to-br from-[#00343d] to-[#002930] border border-white/10 rounded-xl p-3 backdrop-blur">
-                        <div className="text-xs text-white/70 mb-1">Rendimiento</div>
-                        <div className="text-lg font-bold text-[#F8F0AF]">78%</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 bg-gradient-to-br from-[#00343d] to-[#002930] border border-white/10 rounded-xl p-3 backdrop-blur">
-                      <div className="text-xs text-white/70 mb-2">Factores de riesgo detectados</div>
-                      <div className="space-y-2">
-                        {['Económico', 'Familiar', 'Académico'].map((factor, i) => (
-                          <div key={i} className="flex items-center">
-                            <div className="w-2 h-2 rounded-full bg-[#AC4A00] mr-2"></div>
-                            <div className="text-sm text-white/90">{factor}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====== SECCIÓN IMPACTO ====== */}
-      <section id="impacto" className="relative py-20 bg-[#002930] border-t border-white/5">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Impacto <span className="text-[#F8F0AF]">medible</span>
-            </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Nuestro objetivo es reducir la deserción escolar en un 25% entre 8.000 estudiantes de 10 a 18 años en Quibdó.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ImpactMetric value="8,000" label="Estudiantes beneficiados" />
-            <ImpactMetric value="25%" label="Reducción de deserción" />
-            <ImpactMetric value="12" label="Instituciones participantes" />
-            <ImpactMetric value="100+" label="Docentes capacitados" />
-          </div>
-
-          <div className="mt-16 bg-gradient-to-r from-[#00343d] to-[#002029] rounded-2xl border border-white/10 p-6 md:p-8">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="flex-1">
-                <h3 className="text-xl font-bold mb-3">Proyección de impacto a 3 años</h3>
-                <p className="text-white/80 mb-4">
-                  Nuestro modelo predictivo estima un impacto significativo en la reducción de la deserción escolar en la región.
+              <div className="mt-9 grid max-w-3xl gap-7 border-t border-white/10 pt-7 md:grid-cols-[1fr_auto] md:items-end">
+                <p className="max-w-2xl text-base leading-7 text-white/70 md:text-lg">
+                  SIEDES combina inteligencia artificial, análisis predictivo y
+                  enfoque etnoeducativo para identificar señales de riesgo y
+                  apoyar decisiones oportunas frente a la deserción escolar en
+                  contextos de vulnerabilidad.
                 </p>
-                <ul className="space-y-2">
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-[#F8F0AF] mr-3"></div>
-                    <span>+2.000 estudiantes permaneciendo en el sistema educativo</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-[#F8F0AF] mr-3"></div>
-                    <span>+15% en tasas de graduación</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-[#F8F0AF] mr-3"></div>
-                    <span>+30% de participación familiar en el proceso educativo</span>
-                  </li>
-                </ul>
+
+                <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
+                  <Link
+                    href="/solicitar-ayuda"
+                    className="group inline-flex min-h-12 items-center justify-between gap-5 bg-[#AC4A00] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#D45A10]"
+                  >
+                    Solicitar apoyo
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <Link
+                    href="/como-funciona"
+                    className="group inline-flex min-h-12 items-center justify-between gap-5 border border-white/20 px-5 py-3 text-sm font-medium text-white transition hover:border-[#F8F0AF]/50 hover:text-[#F8F0AF]"
+                  >
+                    Ver cómo funciona
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
               </div>
-              
-              <div className="w-full md:w-96">
-                <div className="bg-[#001c22] rounded-xl p-4 border border-white/10">
-                  <div className="h-40 flex items-end gap-2">
-                    {[40, 60, 75].map((height, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full rounded-t bg-gradient-to-t from-[#AC4A00] to-[#F8F0AF]"
-                          style={{ height: `${height}%` }}
-                        ></div>
-                        <div className="text-xs text-white/70 mt-2">Año {i + 1}</div>
+
+              <div className="mt-12 grid gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-3">
+                <SignalStrip
+                  icon={<BrainCircuit className="h-4 w-4" />}
+                  label="Inteligencia artificial"
+                  value="Detección de patrones"
+                />
+                <SignalStrip
+                  icon={<BarChart3 className="h-4 w-4" />}
+                  label="Analítica predictiva"
+                  value="Priorización del riesgo"
+                />
+                <SignalStrip
+                  icon={<Users className="h-4 w-4" />}
+                  label="Etnoeducación"
+                  value="Contexto e identidad"
+                />
+              </div>
+            </div>
+
+            <div className="relative lg:pl-3">
+              <div className="absolute -left-6 top-8 hidden h-[82%] w-px bg-[#F8F0AF]/20 lg:block" />
+              <div className="border border-white/10 bg-[#001c22]/80 p-4 shadow-2xl shadow-black/20 backdrop-blur-sm sm:p-6">
+                <div className="flex items-start justify-between gap-5 border-b border-white/10 pb-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-[#F8F0AF]">
+                      Vista demostrativa
+                    </p>
+                    <h2 className="mt-2 text-xl font-medium">
+                      Inteligencia de riesgo escolar
+                    </h2>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center border border-[#F8F0AF]/20 text-[#F8F0AF]">
+                    <Activity className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <div className="grid gap-5 py-6 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/45">
+                      <span className="h-2 w-2 bg-[#AC4A00]" />
+                      Nivel de atención
+                    </div>
+                    <div className="mt-3 flex items-end gap-3">
+                      <span className="text-5xl font-medium tracking-[-0.06em] text-[#F8F0AF]">
+                        48
+                      </span>
+                      <span className="pb-1 text-sm text-white/50">/ 100</span>
+                    </div>
+                    <p className="mt-2 max-w-xs text-sm leading-6 text-white/60">
+                      Puntaje ilustrativo para mostrar cómo la plataforma puede
+                      priorizar señales y orientar el seguimiento.
+                    </p>
+                  </div>
+
+                  <div className="relative h-32 w-32">
+                    <div className="absolute inset-0 rounded-full border border-white/10" />
+                    <div className="absolute inset-3 rounded-full border border-[#F8F0AF]/20" />
+                    <div className="absolute inset-7 rounded-full border border-[#AC4A00]/35" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <BrainCircuit className="h-8 w-8 text-[#F8F0AF]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/50">
+                      Variables observadas
+                    </p>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-[#F8F0AF]">
+                      Contextualizadas
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {riskFactors.map((factor) => (
+                      <div key={factor.label}>
+                        <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                          <span className="text-white/70">{factor.label}</span>
+                          <span className="text-white/40">{factor.value}%</span>
+                        </div>
+                        <div className="h-px bg-white/10">
+                          <div
+                            className="h-px bg-[#F8F0AF]"
+                            style={{ width: `${factor.value}%` }}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <div className="flex justify-between mt-4 text-xs text-white/70">
-                    <span>Línea base</span>
-                    <span>Proyección</span>
-                  </div>
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-px bg-white/10">
+                  <MiniMetric label="Señales" value="04" />
+                  <MiniMetric label="Siguiente acción" value="Revisar" />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-[10px] uppercase tracking-[0.18em] text-white/35">
+                <span>SIEDES / Early warning intelligence</span>
+                <span>01 — 04</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-white/10 bg-[#F8F0AF] text-[#002930]">
+        <div className="mx-auto grid max-w-7xl gap-px bg-[#002930]/10 px-0 sm:grid-cols-3">
+          <Principle
+            number="01"
+            title="Predecir no es etiquetar"
+            description="El riesgo es una señal para orientar apoyo, no una sentencia sobre el estudiante."
+          />
+          <Principle
+            number="02"
+            title="Los datos necesitan contexto"
+            description="La lectura analítica debe comprender territorio, familia, comunidad e identidad cultural."
+          />
+          <Principle
+            number="03"
+            title="La decisión sigue siendo humana"
+            description="La plataforma apoya a los equipos educativos; no reemplaza el criterio pedagógico."
+          />
+        </div>
+      </section>
+
+      <section id="como-funciona" className="border-b border-white/10 bg-[#001c22] py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <SectionHeading
+            kicker="De la señal a la acción"
+            title="Un sistema de alerta temprana diseñado para intervenir a tiempo."
+            description="SIEDES organiza el proceso en una secuencia clara: entender el contexto, estimar el riesgo, priorizar alertas y acompañar la intervención."
+          />
+
+          <div className="mt-14 grid border border-white/10 md:grid-cols-2 xl:grid-cols-4">
+            {process.map((item, index) => (
+              <FlowStep
+                key={item.number}
+                {...item}
+                isLast={index === process.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-white/10 bg-[#002930] py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-[.78fr_1.22fr] lg:gap-20">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#F8F0AF]">
+                Lectura multidimensional
+              </p>
+              <h2 className="mt-5 max-w-xl text-4xl font-medium leading-[1.02] tracking-[-0.04em] md:text-5xl">
+                El riesgo escolar no cabe en una sola variable.
+              </h2>
+              <p className="mt-6 max-w-lg text-base leading-7 text-white/65">
+                La plataforma busca construir una visión integral para que una
+                ausencia, una caída de rendimiento o una dificultad económica
+                puedan interpretarse dentro de un contexto más amplio.
+              </p>
+            </div>
+
+            <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
+              {dimensions.map((item, index) => (
+                <RiskDimension key={item.title} index={index + 1} {...item} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#002930]/10 bg-[#F8F0AF] py-20 text-[#002930] md:py-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#AC4A00]">
+                Tecnología con contexto
+              </p>
+              <h2 className="mt-5 max-w-2xl text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-6xl">
+                Inteligencia artificial sin perder de vista a la comunidad.
+              </h2>
+              <p className="mt-7 max-w-xl text-base leading-7 text-[#002930]/70">
+                El enfoque etnoeducativo introduce una condición esencial:
+                interpretar los datos desde la realidad de los estudiantes y no
+                desde un modelo abstracto desconectado del territorio.
+              </p>
+
+              <div className="mt-10 flex flex-wrap gap-2">
+                {[
+                  "Contexto territorial",
+                  "Identidad cultural",
+                  "Participación comunitaria",
+                  "Decisión pedagógica",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="border border-[#002930]/20 px-3 py-2 text-xs uppercase tracking-[0.12em]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative border border-[#002930]/15 bg-[#002930] p-6 text-white md:p-8">
+              <div className="absolute right-0 top-0 h-24 w-24 border-b border-l border-[#F8F0AF]/15" />
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+                    Núcleo SIEDES
+                  </p>
+                  <h3 className="mt-3 text-2xl font-medium">
+                    Analítica para la permanencia
+                  </h3>
+                </div>
+                <Cpu className="h-7 w-7 text-[#F8F0AF]" />
+              </div>
+
+              <div className="mt-10 space-y-1">
+                <ArchitectureRow
+                  icon={<Database className="h-4 w-4" />}
+                  label="Datos"
+                  value="Académicos + contexto"
+                />
+                <ArchitectureRow
+                  icon={<BrainCircuit className="h-4 w-4" />}
+                  label="Modelo"
+                  value="Análisis de patrones"
+                />
+                <ArchitectureRow
+                  icon={<BellRing className="h-4 w-4" />}
+                  label="Salida"
+                  value="Alertas priorizadas"
+                />
+                <ArchitectureRow
+                  icon={<HeartHandshake className="h-4 w-4" />}
+                  label="Acción"
+                  value="Intervención humana"
+                />
+              </div>
+
+              <div className="mt-8 border-t border-white/10 pt-6">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#F8F0AF]" />
+                  <p className="text-sm leading-6 text-white/60">
+                    El diseño de una plataforma educativa con IA exige
+                    gobernanza, trazabilidad y tratamiento responsable de los
+                    datos de estudiantes.
+                  </p>
                 </div>
               </div>
             </div>
@@ -398,163 +411,263 @@ export default function HomePage() {;
         </div>
       </section>
 
-      {/* ====== TESTIMONIOS MEJORADOS ====== */}
-      <section id="testimonios" className="relative py-20 bg-gradient-to-b from-[#002930] to-[#001c22] border-t border-white/5">
-        <div className="absolute inset-0 overflow-hidden opacity-5">
-          <div className="absolute top-0 left-1/4 w-48 h-48 rounded-full bg-[#F8F0AF] blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full bg-[#AC4A00] blur-3xl"></div>
-        </div>
-        
-        <div className="relative mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Voces de <span className="text-[#F8F0AF]">nuestra comunidad</span>
-            </h2>
-            <p className="mt-4 text-white/80 max-w-2xl mx-auto">
-              Escucha directamente de quienes están experimentando el impacto de SIEDES en Quibdó.
-            </p>
+      <section id="impacto" className="border-b border-white/10 bg-[#001c22] py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid items-end gap-10 lg:grid-cols-[1fr_auto]">
+            <SectionHeading
+              kicker="Propósito del proyecto"
+              title="Convertir señales tempranas en oportunidades de permanencia."
+              description="El valor de SIEDES no está en producir una predicción, sino en ayudar a que esa señal genere una respuesta coordinada y oportuna."
+            />
+
+            <Link
+              href="/tecnologia"
+              className="group inline-flex items-center gap-3 text-sm text-[#F8F0AF]"
+            >
+              Explorar la tecnología
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Testimonial
-              name="María González"
-              role="Madre de familia"
-              quote="Gracias a SIEDES, pude recibir apoyo a tiempo para que mi hijo no abandonara la escuela. Las alertas me avisaron cuando empezó a tener dificultades."
+          <div className="mt-14 grid gap-px border border-white/10 bg-white/10 lg:grid-cols-3">
+            <ImpactBlock
+              icon={<Target className="h-6 w-6" />}
+              title="Detección temprana"
+              description="Identificar señales antes de que el abandono escolar se convierta en una decisión irreversible."
             />
-            <Testimonial
-              name="Prof. Javier Rodríguez"
-              role="Docente"
-              quote="La plataforma me permite identificar estudiantes en riesgo antes de que sea demasiado tarde. Las intervenciones sugeridas son muy prácticas y contextualizadas."
+            <ImpactBlock
+              icon={<Network className="h-6 w-6" />}
+              title="Respuesta coordinada"
+              description="Conectar la lectura de datos con docentes, familias, orientación escolar y redes de apoyo."
             />
-            <Testimonial
-              name="Ana Lucía Moreno"
-              role="Estudiante, 16 años"
-              quote="Me gusta que la app entiende nuestra realidad. No es solo tecnología, siento que realmente quieren ayudarnos a seguir estudiando."
+            <ImpactBlock
+              icon={<School className="h-6 w-6" />}
+              title="Permanencia educativa"
+              description="Orientar recursos y acciones hacia estudiantes que requieren acompañamiento prioritario."
             />
           </div>
         </div>
       </section>
 
-      {/* ====== CTA MEJORADO ====== */}
-      <section id="cta" className="relative py-20 bg-gradient-to-r from-[#00343d] to-[#001c22] border-t border-white/5 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#F8F0AF] opacity-5"></div>
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-[#AC4A00] opacity-5"></div>
+      <section className="relative overflow-hidden bg-[#00343d] py-20 md:py-24">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute -right-8 -top-10 h-48 w-48 rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-[#F8F0AF]/50 via-transparent to-transparent" />
         </div>
-        
-        <div className="relative mx-auto max-w-4xl px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            ¿Necesitas <span className="text-[#F8F0AF]">apoyo</span> para prevenir la deserción escolar?
-          </h2>
-          <p className="mt-4 text-xl text-white/80">
-            Únete a nuestra plataforma y accede a herramientas predictivas para mantener a tus estudiantes en el sistema educativo.
-          </p>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            <Link
-              href="#"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#D45A10] px-6 py-4 font-medium text-white shadow-lg shadow-[#AC4A00]/30 hover:shadow-xl hover:shadow-[#AC4A00]/40 transition-all duration-300"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-              Solicitar ayuda
-            </Link>
-            
-            <Link
-              href="#"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-4 font-medium text-white/90 hover:text-[#F8F0AF] hover:border-[#F8F0AF]/40 transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Más información
-            </Link>
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="grid items-end gap-10 lg:grid-cols-[1fr_auto]">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#F8F0AF]">
+                Prevenir empieza por ver a tiempo
+              </p>
+              <h2 className="mt-5 max-w-4xl text-4xl font-medium leading-[1] tracking-[-0.045em] md:text-6xl">
+                Una plataforma para ayudar a que más estudiantes continúen su
+                trayectoria educativa.
+              </h2>
+              <p className="mt-6 max-w-2xl text-base leading-7 text-white/65">
+                Conoce cómo SIEDES integra tecnología, contexto y acción humana
+                para apoyar la prevención de la deserción escolar.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <Link
+                href="/solicitar-ayuda"
+                className="group inline-flex min-h-12 items-center justify-between gap-8 bg-[#F8F0AF] px-5 py-3 text-sm font-medium text-[#002930] transition hover:bg-white"
+              >
+                Solicitar apoyo
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/tecnologia"
+                className="group inline-flex min-h-12 items-center justify-between gap-8 border border-white/20 px-5 py-3 text-sm font-medium text-white transition hover:border-[#F8F0AF]/50 hover:text-[#F8F0AF]"
+              >
+                Conocer SIEDES
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
-
-          <p className="mt-8 text-sm text-white/60">
-            Atención personalizada para instituciones educativas, docentes y familias.
-          </p>
         </div>
       </section>
     </div>
   );
 }
 
-/* ====== COMPONENTES AUXILIARES MEJORADOS ====== */
-
-function Metric({ label, value }: { label: string; value: string }) {
+function SignalStrip({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-colors group">
-      <dt className="text-white/70 text-sm">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold text-white group-hover:text-[#F8F0AF] transition-colors">{value}</dd>
-    </div>
-  );
-}
-
-function Step({ number, title, desc, icon }: { number: string; title: string; desc: string; icon: React.ReactNode }) {
-  return (
-    <li className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
-      <div className="inline-flex items-center justify-center rounded-lg bg-[#F8F0AF] text-[#002930] px-3 py-2 text-xs font-bold mb-4 group-hover:scale-110 transition-transform">
-        {number}
-      </div>
-      <div className="text-[#F8F0AF] mb-4">
+    <div className="bg-[#001c22]/70 p-4">
+      <div className="flex items-center gap-2 text-[#F8F0AF]">
         {icon}
+        <span className="text-[10px] uppercase tracking-[0.16em]">{label}</span>
       </div>
-      <h3 className="text-xl font-semibold text-white">{title}</h3>
-      <p className="mt-2 text-white/80">{desc}</p>
-    </li>
-  );
-}
-
-function ContextCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
-      <div className="text-[#F8F0AF] mb-4">
-        {icon}
-      </div>
-      <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-      <p className="text-white/80">{description}</p>
+      <p className="mt-3 text-sm text-white/70">{value}</p>
     </div>
   );
 }
 
-function TechFeature({ title, description }: { title: string; description: string }) {
+function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-4">
-      <div className="flex-shrink-0 mt-1">
-        <div className="w-2 h-2 rounded-full bg-[#F8F0AF]"></div>
-      </div>
-      <div>
-        <h3 className="font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-white/80">{description}</p>
-      </div>
+    <div className="bg-[#002930] p-4">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium text-white">{value}</p>
     </div>
   );
 }
 
-function ImpactMetric({ value, label }: { value: string; label: string }) {
+function Principle({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 text-center hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
-      <div className="text-3xl font-bold text-[#F8F0AF] group-hover:scale-110 transition-transform">{value}</div>
-      <div className="mt-2 text-white/80">{label}</div>
+    <div className="bg-[#F8F0AF] px-6 py-8 md:px-8 md:py-10">
+      <div className="flex items-center justify-between border-b border-[#002930]/15 pb-5">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-[#AC4A00]">
+          Principio
+        </span>
+        <span className="text-sm text-[#002930]/35">{number}</span>
+      </div>
+      <h3 className="mt-6 text-xl font-medium tracking-[-0.025em]">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-[#002930]/65">{description}</p>
     </div>
   );
 }
 
-function Testimonial({ name, role, quote }: { name: string; role: string; quote: string }) {
+function SectionHeading({
+  kicker,
+  title,
+  description,
+}: {
+  kicker: string;
+  title: string;
+  description: string;
+}) {
   return (
-    <figure className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#002930] to-[#001c22] p-6 hover:from-[#00343d] hover:to-[#002029] transition-all duration-300 group">
-      <div className="flex items-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center text-white font-bold">
-          {name.charAt(0)}
+    <div className="max-w-3xl">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-[#F8F0AF]">
+        {kicker}
+      </p>
+      <h2 className="mt-5 text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-6xl">
+        {title}
+      </h2>
+      <p className="mt-6 max-w-2xl text-base leading-7 text-white/65">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function FlowStep({
+  number,
+  icon,
+  title,
+  description,
+  isLast,
+}: {
+  number: string;
+  icon: ReactNode;
+  title: string;
+  description: string;
+  isLast: boolean;
+}) {
+  return (
+    <article
+      className={`relative bg-[#001c22] p-6 md:p-8 ${
+        isLast ? "" : "border-b border-white/10 md:border-r xl:border-b-0"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs tracking-[0.18em] text-white/35">{number}</span>
+        <div className="text-[#F8F0AF]">{icon}</div>
+      </div>
+      <div className="mt-14 h-px bg-white/10">
+        <div className="h-px w-10 bg-[#AC4A00]" />
+      </div>
+      <h3 className="mt-6 text-xl font-medium">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-white/60">{description}</p>
+    </article>
+  );
+}
+
+function RiskDimension({
+  icon,
+  title,
+  description,
+  index,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  index: number;
+}) {
+  return (
+    <article className="min-h-64 bg-[#002930] p-6 md:p-8">
+      <div className="flex items-center justify-between">
+        <div className="flex h-10 w-10 items-center justify-center border border-[#F8F0AF]/20 text-[#F8F0AF]">
+          {icon}
         </div>
-        <div className="ml-4">
-          <p className="font-medium text-white">{name}</p>
-          <p className="text-white/60 text-sm">{role}</p>
-        </div>
+        <span className="text-xs text-white/30">0{index}</span>
       </div>
-      <blockquote className="text-white/90">&ldquo;{quote}&rdquo;</blockquote>
-    </figure>
+      <h3 className="mt-10 text-xl font-medium">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-white/60">{description}</p>
+    </article>
+  );
+}
+
+function ArchitectureRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="grid grid-cols-[auto_5rem_1fr] items-center gap-3 border-b border-white/10 py-4 last:border-b-0">
+      <span className="text-[#F8F0AF]">{icon}</span>
+      <span className="text-[10px] uppercase tracking-[0.16em] text-white/35">
+        {label}
+      </span>
+      <span className="text-sm text-white/75">{value}</span>
+    </div>
+  );
+}
+
+function ImpactBlock({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <article className="bg-[#001c22] p-7 md:p-9">
+      <div className="text-[#F8F0AF]">{icon}</div>
+      <h3 className="mt-10 text-2xl font-medium tracking-[-0.03em]">{title}</h3>
+      <p className="mt-4 text-sm leading-6 text-white/60">{description}</p>
+      <div className="mt-8 flex items-center gap-2 text-[10px] uppercase tracking-[0.17em] text-white/35">
+        <CheckCircle2 className="h-3.5 w-3.5 text-[#AC4A00]" />
+        SIEDES
+      </div>
+    </article>
   );
 }
