@@ -1,428 +1,308 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ArrowRight, Menu, X } from "lucide-react";
 
-type NavItem = { label: string; href: string; description?: string };
+type NavItem = {
+  label: string;
+  href: string;
+  description: string;
+  number: string;
+};
 
 const NAV: NavItem[] = [
-  { 
-    label: "Inicio", 
+  {
+    number: "01",
+    label: "Inicio",
     href: "/",
-    description: "Página principal del sistema"
+    description: "Visión general de SIEDES",
   },
-  { 
-    label: "Cómo funciona", 
+  {
+    number: "02",
+    label: "Cómo funciona",
     href: "/como-funciona",
-    description: "Conoce nuestro proceso"
+    description: "Del dato a la intervención",
   },
-  { 
-    label: "Beneficios", 
+  {
+    number: "03",
+    label: "Beneficios",
     href: "/beneficios",
-    description: "Ventajas de usar SIEDES"
+    description: "Valor para la comunidad educativa",
+  },
+  {
+    number: "04",
+    label: "Tecnología",
+    href: "/tecnologia",
+    description: "IA, analítica y contexto",
   },
 ];
 
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [isActive, setIsActive] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
-    setMounted(true);
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    
-    // Verificar estado activo/inactivo basado en la hora
-    const checkActiveStatus = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      
-      // Inactivo después de las 11:20 PM (23:20) hasta las 6:00 AM
-      const isAfterHours = (hours >= 23 && minutes >= 20) || hours < 6;
-      setIsActive(!isAfterHours);
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
     };
 
-    checkActiveStatus();
-    
-    // Verificar cada minuto
-    const interval = setInterval(checkActiveStatus, 60000);
-    
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearInterval(interval);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [open]);
 
-  // Función para verificar si una ruta está activa
   const isActiveRoute = (href: string) => {
-    if (href === "/") return pathname === href;
+    if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return (
-      <header className="fixed top-0 left-0 w-full z-50 bg-[#002930]/95 backdrop-blur-md h-20" />
-    );
-  }
-
   return (
-    <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-[#002930]/98 backdrop-blur-xl shadow-2xl shadow-black/20 py-2"
-          : "bg-gradient-to-b from-[#002930]/95 to-transparent backdrop-blur-md py-4"
-      }`}
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+    <>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#001c22] text-white">
+        <div className="hidden border-b border-white/10 bg-[#002930] sm:block">
+          <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-5 text-[10px] uppercase tracking-[0.2em] text-white/45 sm:px-6 lg:px-8">
+            <span>Sistema de inteligencia para la permanencia escolar</span>
+            <span className="text-[#F8F0AF]/75">Quibdó · Chocó</span>
+          </div>
+        </div>
+
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
           <Link
             href="/"
-            aria-label="Inicio SIEDES"
-            className="flex items-center gap-3 group relative"
+            aria-label="Ir al inicio de SIEDES"
+            className="group flex min-w-0 items-center gap-3"
           >
-            <div className="relative">
-              {/* Efecto de brillo detrás del logo */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] rounded-2xl blur-md opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
-              
-              {/* Contenedor principal del logo */}
-              <div className="relative flex items-center gap-3 bg-[#002930]/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 group-hover:border-[#F8F0AF]/30 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-[#F8F0AF]/20">
-                <div className="relative">
-                  <Image 
-                    src="/favicon-32x32.png" 
-                    alt="SIEDES" 
-                    width={40}
-                    height={40}
-                    className="h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-lg"
-                  />
-                  {/* Efecto de partícula */}
-                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping ${
-                    isActive ? "bg-green-400" : "bg-yellow-400"
-                  }`}></div>
-                </div>
-                
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-lg sm:text-xl lg:text-2xl tracking-tight bg-gradient-to-r from-white to-[#F8F0AF] bg-clip-text text-transparent">
-                      SIEDES
-                    </span>
-                    {/* Indicador de status */}
-                    <div className={`hidden sm:flex items-center gap-1 px-2 py-1 rounded-full border ${
-                      isActive 
-                        ? "bg-green-500/20 border-green-500/30" 
-                        : "bg-yellow-500/20 border-yellow-500/30"
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                        isActive ? "bg-green-400" : "bg-yellow-400"
-                      }`}></div>
-                      <span className={`text-xs ${
-                        isActive ? "text-green-300" : "text-yellow-300"
-                      }`}>
-                        {isActive ? "En línea" : "Fuera de horario"}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-[#F8F0AF]/80 -mt-1 hidden sm:block">
-                    Prevención de deserción escolar
-                  </span>
-                </div>
-              </div>
-            </div>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#F8F0AF]/20 bg-[#002930]">
+              <Image
+                src="/favicon-32x32.png"
+                alt=""
+                width={32}
+                height={32}
+                className="h-7 w-7 object-contain"
+                priority
+              />
+            </span>
+
+            <span className="min-w-0">
+              <span className="block text-lg font-medium tracking-[-0.03em] text-white">
+                SIEDES
+              </span>
+              <span className="hidden truncate text-[9px] uppercase tracking-[0.17em] text-white/40 sm:block">
+                IA · Analítica · Etnoeducación
+              </span>
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden xl:flex items-center gap-1">
-            {NAV.map((item, index) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative px-6 py-3 transition-all duration-300 group/nav overflow-hidden ${
-                  isActiveRoute(item.href)
-                    ? "text-[#F8F0AF] font-semibold"
-                    : "text-white/80 hover:text-white"
-                }`}
-              >
-                {/* Fondo animado para items activos */}
-                {isActiveRoute(item.href) && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#F8F0AF]/10 to-[#AC4A00]/10 rounded-xl"></div>
-                )}
-                
-                {/* Fondo animado al hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#F8F0AF]/5 to-transparent translate-x-[-100%] group-hover/nav:translate-x-[100%] transition-transform duration-1000"></div>
-                
-                {/* Texto y borde inferior */}
-                <span className="relative z-10 font-medium tracking-wide">
-                  {item.label}
-                </span>
-                
-                {/* Indicador activo */}
-                <div className={`absolute bottom-0 left-1/2 h-0.5 bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] transition-all duration-300 ${
-                  isActiveRoute(item.href)
-                    ? "w-full left-0"
-                    : "w-0 group-hover/nav:w-full group-hover/nav:left-0"
-                }`}></div>
-                
-                {/* Número de item sutil */}
-                <div className="absolute -top-2 -right-2 text-xs text-[#F8F0AF]/30 font-bold">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-              </Link>
-            ))}
+          <nav className="hidden items-stretch self-stretch lg:flex" aria-label="Navegación principal">
+            {NAV.map((item) => {
+              const active = isActiveRoute(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cx(
+                    "group relative flex min-w-[122px] flex-col justify-center border-l border-white/10 px-5 transition-colors last:border-r",
+                    active
+                      ? "bg-[#F8F0AF] text-[#002930]"
+                      : "text-white hover:bg-white/[0.035]"
+                  )}
+                >
+                  <span
+                    className={cx(
+                      "text-[9px] uppercase tracking-[0.18em]",
+                      active ? "text-[#AC4A00]" : "text-white/30"
+                    )}
+                  >
+                    {item.number}
+                  </span>
+                  <span className="mt-1 text-sm font-medium">{item.label}</span>
+                  {!active && (
+                    <span className="absolute bottom-0 left-0 h-px w-0 bg-[#F8F0AF] transition-all duration-300 group-hover:w-full" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Tablet Navigation */}
-          <nav className="hidden lg:flex xl:hidden items-center gap-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative px-4 py-3 transition-all duration-300 group/nav ${
-                  isActiveRoute(item.href)
-                    ? "text-[#F8F0AF] font-semibold"
-                    : "text-white/80 hover:text-white"
-                }`}
-              >
-                <span className="font-medium text-sm">{item.label}</span>
-                <div className={`absolute bottom-0 left-0 h-0.5 bg-[#F8F0AF] transition-all duration-300 ${
-                  isActiveRoute(item.href)
-                    ? "w-full"
-                    : "w-0 group-hover/nav:w-full"
-                }`}></div>
-              </Link>
-            ))}
-          </nav>
-
-          {/* CTA Section */}
-          <div className="flex items-center gap-3">
-            {/* Botón principal */}
+          <div className="flex items-center gap-2">
             <Link
-              href="/solicitar-ayuda"
-              className="hidden md:flex items-center gap-3 rounded-2xl px-6 py-3 bg-gradient-to-r from-[#AC4A00] via-[#D45A10] to-[#AC4A00] text-white font-medium hover:shadow-2xl hover:shadow-[#AC4A00]/40 transition-all duration-500 transform hover:scale-105 hover:rotate-1 group/cta relative overflow-hidden"
+              href="/iniciar-sesion"
+              className="hidden min-h-11 items-center border border-white/15 px-4 text-xs font-medium text-white/75 transition hover:border-[#F8F0AF]/35 hover:text-[#F8F0AF] md:inline-flex"
             >
-              {/* Efecto de brillo */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/cta:translate-x-[100%] transition-transform duration-1000"></div>
-              
-              <svg
-                className="w-5 h-5 relative z-10"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-              </svg>
-              <span className="relative z-10">Solicitar ayuda</span>
-              
-              {/* Efecto de partículas */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-2xl blur opacity-30 group-hover/cta:opacity-70 transition duration-1000 group-hover/cta:duration-200 animate-tilt"></div>
+              Acceder
             </Link>
 
-            {/* Mobile Menu Button */}
-            <button
-              className="lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 group/toggle relative overflow-hidden"
-              onClick={() => setOpen(!open)}
-              aria-expanded={open}
-              aria-controls="mobile-menu"
-              aria-label="Abrir menú"
+            <Link
+              href="/solicitar-ayuda"
+              className="group hidden min-h-11 items-center gap-5 bg-[#AC4A00] px-4 text-xs font-medium text-white transition hover:bg-[#D45A10] sm:inline-flex"
             >
-              {/* Fondo animado */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#F8F0AF]/10 to-[#AC4A00]/10 opacity-0 group-hover/toggle:opacity-100 transition-opacity duration-300"></div>
-              
-              <div className="relative w-6 h-6 transform transition-all duration-300">
-                <span className={`absolute top-1.5 left-0 w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${
-                  open ? "rotate-45 top-2.5" : ""
-                }`}></span>
-                <span className={`absolute top-2.5 left-0 w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${
-                  open ? "opacity-0" : ""
-                }`}></span>
-                <span className={`absolute top-3.5 left-0 w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${
-                  open ? "-rotate-45 top-2.5" : ""
-                }`}></span>
-              </div>
+              Solicitar apoyo
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="inline-flex h-11 w-11 items-center justify-center border border-white/15 text-white transition hover:border-[#F8F0AF]/40 hover:text-[#F8F0AF] lg:hidden"
+              aria-label="Abrir menú de navegación"
+              aria-expanded={open}
+              aria-controls="siedes-mobile-menu"
+            >
+              <Menu className="h-5 w-5" />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu - MEJORADO Y CON TODAS LAS RUTAS */}
       <div
-        id="mobile-menu"
-        className={`lg:hidden fixed inset-0 z-40 transition-all duration-500 ease-in-out ${
-          open
-            ? "opacity-100 visible"
-            : "opacity-0 invisible"
-        }`}
+        id="siedes-mobile-menu"
+        className={cx(
+          "fixed inset-0 z-[80] transition-opacity duration-300 lg:hidden",
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        )}
+        aria-hidden={!open}
       >
-        {/* Backdrop con blur */}
-        <div 
-          className="absolute inset-0 bg-[#00161a]/98 backdrop-blur-2xl"
+        <button
+          type="button"
+          aria-label="Cerrar menú"
           onClick={() => setOpen(false)}
-        ></div>
+          className="absolute inset-0 bg-[#001014]/80"
+        />
 
-        {/* Panel del menú */}
-        <div className={`absolute top-0 left-0 h-full w-full bg-gradient-to-b from-[#002930] to-[#00161a] shadow-2xl shadow-black/50 transform transition-transform duration-500 ease-in-out ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}>
-          
-          {/* Contenedor principal con scroll */}
-          <div className="flex flex-col h-full">
-            {/* Header del menú móvil */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#002930]/80 backdrop-blur-sm">
-              <Link
-                href="/"
-                className="flex items-center gap-3 group"
-                onClick={() => setOpen(false)}
-              >
-                <Image 
-                  src="/favicon-32x32.png" 
-                  alt="SIEDES" 
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 object-contain"
+        <aside
+          className={cx(
+            "absolute right-0 top-0 flex h-[100dvh] w-full max-w-[430px] flex-col border-l border-white/10 bg-[#001c22] text-white shadow-2xl shadow-black/40 transition-transform duration-300",
+            open ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-5">
+            <Link
+              href="/"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3"
+            >
+              <span className="flex h-10 w-10 items-center justify-center border border-[#F8F0AF]/20 bg-[#002930]">
+                <Image
+                  src="/favicon-32x32.png"
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-7 w-7 object-contain"
                 />
-                <div className="flex flex-col">
-                  <span className="font-bold text-white text-lg">SIEDES</span>
-                  <span className="text-xs text-[#F8F0AF]">Prevención de deserción</span>
-                </div>
-              </Link>
-              
-              <button
-                onClick={() => setOpen(false)}
-                className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+              </span>
+              <span>
+                <span className="block text-base font-medium">SIEDES</span>
+                <span className="block text-[9px] uppercase tracking-[0.16em] text-white/35">
+                  Permanencia escolar
+                </span>
+              </span>
+            </Link>
 
-            {/* Navegación móvil - CON TODAS LAS RUTAS VISIBLES */}
-            <div className="flex-1 overflow-y-auto">
-              <nav className="p-4 space-y-3">
-                {/* Mapeo de todas las rutas de NAV */}
-                {NAV.map((item, index) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group/mobile-nav active:scale-95 ${
-                      isActiveRoute(item.href)
-                        ? "bg-[#F8F0AF]/10 border-[#F8F0AF]/30"
-                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-[#F8F0AF]/30"
-                    }`}
-                  >
-                    {/* Indicador numérico con estado activo */}
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-xl font-bold text-sm transition-all duration-300 ${
-                      isActiveRoute(item.href)
-                        ? "bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] text-[#002930] scale-110"
-                        : "bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] group-hover/mobile-nav:scale-110"
-                    }`}>
-                      {index + 1}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className={`font-medium transition-colors text-base ${
-                        isActiveRoute(item.href)
-                          ? "text-[#F8F0AF]"
-                          : "text-white group-hover/mobile-nav:text-[#F8F0AF]"
-                      }`}>
-                        {item.label}
-                      </div>
-                      {item.description && (
-                        <div className="text-xs text-white/60 mt-1">
-                          {item.description}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Indicador de ruta activa */}
-                    {isActiveRoute(item.href) && (
-                      <div className="w-2 h-2 bg-[#F8F0AF] rounded-full animate-pulse"></div>
-                    )}
-                    
-                    <svg className={`w-5 h-5 transition-colors ${
-                      isActiveRoute(item.href)
-                        ? "text-[#F8F0AF]"
-                        : "text-white/40 group-hover/mobile-nav:text-[#F8F0AF]"
-                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                ))}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="inline-flex h-11 w-11 items-center justify-center border border-white/15 text-white/75 transition hover:border-[#F8F0AF]/40 hover:text-[#F8F0AF]"
+              aria-label="Cerrar menú de navegación"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-                {/* Sección informativa adicional */}
-                <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-[#AC4A00]/10 to-[#F8F0AF]/10 border border-[#AC4A00]/20">
-                  <h3 className="text-[#F8F0AF] font-semibold text-sm mb-2 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Navegación completa
-                  </h3>
-                  <p className="text-white/70 text-xs">
-                    Explora todas las secciones para conocer todo sobre nuestro sistema de prevención de deserción escolar.
-                  </p>
-                </div>
-              </nav>
-            </div>
+          <div className="border-b border-white/10 px-5 py-6">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+              Explorar SIEDES
+            </p>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-white/50">
+              Conoce cómo la plataforma conecta datos, análisis predictivo,
+              contexto etnoeducativo y acción humana.
+            </p>
+          </div>
 
-            {/* CTA Móvil */}
-            <div className="p-4 border-t border-white/10 bg-[#002930]/80 backdrop-blur-sm">
-              <div className="space-y-3">
-                {/* Estado del servicio */}
-                <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10">
-                  <div className={`w-2 h-2 rounded-full animate-pulse ${
-                    isActive ? "bg-green-400" : "bg-yellow-400"
-                  }`}></div>
-                  <span className="text-sm text-white/80">
-                    {isActive ? "Servicio en línea" : "Fuera de horario de atención"}
-                  </span>
-                </div>
+          <nav className="flex-1 overflow-y-auto" aria-label="Navegación móvil">
+            {NAV.map((item) => {
+              const active = isActiveRoute(item.href);
 
-                {/* Botón principal */}
+              return (
                 <Link
-                  href="/solicitar-ayuda"
+                  key={item.href}
+                  href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-3 w-full rounded-2xl px-6 py-4 bg-gradient-to-r from-[#AC4A00] to-[#D45A10] text-white font-medium hover:shadow-2xl hover:shadow-[#AC4A00]/40 transition-all duration-300 transform hover:scale-105 active:scale-95 group/mobile-cta relative overflow-hidden"
+                  aria-current={active ? "page" : undefined}
+                  className={cx(
+                    "group grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-b border-white/10 px-5 py-5 transition-colors",
+                    active ? "bg-[#F8F0AF] text-[#002930]" : "hover:bg-white/[0.035]"
+                  )}
                 >
-                  {/* Efecto de brillo */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/mobile-cta:translate-x-[100%] transition-transform duration-1000"></div>
-                  
-                  <svg className="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  <span className="relative z-10 font-semibold">Solicitar ayuda</span>
+                  <span
+                    className={cx(
+                      "text-[10px] uppercase tracking-[0.18em]",
+                      active ? "text-[#AC4A00]" : "text-white/30"
+                    )}
+                  >
+                    {item.number}
+                  </span>
+
+                  <span>
+                    <span className="block text-base font-medium">{item.label}</span>
+                    <span
+                      className={cx(
+                        "mt-1 block text-xs",
+                        active ? "text-[#002930]/55" : "text-white/40"
+                      )}
+                    >
+                      {item.description}
+                    </span>
+                  </span>
+
+                  <ArrowRight
+                    className={cx(
+                      "h-4 w-4 transition-transform group-hover:translate-x-1",
+                      active ? "text-[#AC4A00]" : "text-[#F8F0AF]"
+                    )}
+                  />
                 </Link>
-                
-                {/* Información de contacto móvil */}
-                <div className="text-center pt-2">
-                  <p className="text-xs text-white/50 mb-1">
-                    ¿Necesitas ayuda inmediata?
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm text-[#F8F0AF] font-medium">
-                      Línea de apoyo: <span className="text-white">01-8000-123456</span>
-                    </p>
-                    <p className="text-xs text-white/60">
-                      Horario: 6:00 AM - 11:20 PM
-                    </p>
-                  </div>
-                </div>
-              </div>
+              );
+            })}
+          </nav>
+
+          <div className="border-t border-white/10 bg-[#002930] p-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/iniciar-sesion"
+                onClick={() => setOpen(false)}
+                className="inline-flex min-h-12 items-center justify-center border border-white/15 px-4 text-sm font-medium text-white transition hover:border-[#F8F0AF]/40 hover:text-[#F8F0AF]"
+              >
+                Acceder
+              </Link>
+              <Link
+                href="/solicitar-ayuda"
+                onClick={() => setOpen(false)}
+                className="group inline-flex min-h-12 items-center justify-between gap-5 bg-[#AC4A00] px-4 text-sm font-medium text-white transition hover:bg-[#D45A10]"
+              >
+                Solicitar apoyo
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-    </header>
+    </>
   );
 }
