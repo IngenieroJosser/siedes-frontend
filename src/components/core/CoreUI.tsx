@@ -274,3 +274,139 @@ export function Pagination({
     </div>
   );
 }
+
+
+export function FormSection({
+  index,
+  title,
+  description,
+  children,
+}: {
+  index: string;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-[#002930]/14 last:border-b-0">
+      <div className="grid gap-6 px-5 py-7 lg:grid-cols-[15rem_1fr] lg:px-6 lg:py-8">
+        <div>
+          <p className="text-[9px] uppercase tracking-[0.18em] text-[#AC4A00]">
+            {index}
+          </p>
+          <h2 className="mt-2 text-lg font-medium tracking-[-0.025em] text-[#002930]">
+            {title}
+          </h2>
+          {description && (
+            <p className="mt-3 text-xs leading-5 text-[#002930]/45">
+              {description}
+            </p>
+          )}
+        </div>
+        <div>{children}</div>
+      </div>
+    </section>
+  );
+}
+
+export function InlineNotice({
+  tone = "info",
+  title,
+  children,
+}: {
+  tone?: "info" | "success" | "error" | "warning";
+  title?: string;
+  children: ReactNode;
+}) {
+  const border =
+    tone === "error"
+      ? "border-[#8f2f20]"
+      : tone === "success"
+        ? "border-[#2f6a5f]"
+        : tone === "warning"
+          ? "border-[#AC4A00]"
+          : "border-[#315c75]";
+
+  const titleColor =
+    tone === "error"
+      ? "text-[#8f2f20]"
+      : tone === "success"
+        ? "text-[#2f6a5f]"
+        : tone === "warning"
+          ? "text-[#AC4A00]"
+          : "text-[#315c75]";
+
+  return (
+    <div className={"border-l-2 bg-[#F8F0AF] px-4 py-3 " + border}>
+      {title && (
+        <p className={"text-xs font-medium " + titleColor}>{title}</p>
+      )}
+      <div className="mt-1 text-xs leading-5 text-[#002930]/52">{children}</div>
+    </div>
+  );
+}
+
+export function CheckboxField({
+  id,
+  label,
+  description,
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  id: string;
+  label: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className={
+        "grid cursor-pointer grid-cols-[auto_1fr] gap-3 border px-4 py-3 transition " +
+        (checked
+          ? "border-[#002930]/32 bg-white/25"
+          : "border-[#002930]/12 hover:border-[#002930]/28") +
+        (disabled ? " cursor-not-allowed opacity-50" : "")
+      }
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-0.5 h-4 w-4 accent-[#AC4A00]"
+      />
+      <span>
+        <span className="block text-sm font-medium text-[#002930]">{label}</span>
+        {description && (
+          <span className="mt-1 block text-xs leading-5 text-[#002930]/42">
+            {description}
+          </span>
+        )}
+      </span>
+    </label>
+  );
+}
+
+export function DetailItem({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+        {label}
+      </p>
+      <div className="mt-2 text-sm leading-6 text-[#002930]">{value}</div>
+    </div>
+  );
+}
