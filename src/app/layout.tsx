@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 import { DM_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/navbar";
-import Footer from "@/footer";
+import SiteFrame from "@/components/SiteFrame";
 
-// Fuente personalizada
 const dmMono = DM_Mono({
   variable: "--font-dm-mono",
   weight: ["300", "400", "500"],
   subsets: ["latin"],
 });
 
-// Metadatos de la aplicación
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL_FRONTEND || "http://localhost:3000"),
-  title: "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL_FRONTEND || "http://localhost:3000"
+  ),
+  title:
+    "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
   description:
     "SIEDES es una plataforma etnoeducativa que usa inteligencia artificial para transformar la educación, fortalecer la identidad cultural y prevenir la deserción escolar.",
   keywords: [
@@ -27,11 +27,12 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Equipo SIEDES" }],
   icons: {
-    icon: "/favicon.ico", // coloca tu favicon en public/
+    icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
+    title:
+      "SIEDES - Plataforma Etnoeducativa con IA para Prevenir la Deserción Escolar en Colombia",
     description:
       "SIEDES es una plataforma etnoeducativa que usa inteligencia artificial para transformar la educación, fortalecer la identidad cultural y prevenir la deserción escolar.",
     url: "https://siedes.com",
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
         alt: "SIEDES Logo",
       },
     ],
-    locale: "es_ES",
+    locale: "es_CO",
     type: "website",
   },
   twitter: {
@@ -58,15 +59,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${dmMono.variable}`}>
-      <body className="antialiased bg-[#F8F0AF] text-[#00343d] flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow">
-          {children}
-          </main>
-        <Footer />
+    <html lang="es-CO" className={dmMono.variable}>
+      <body className="flex min-h-screen flex-col bg-[#F8F0AF] text-[#00343d] antialiased">
+        <SiteFrame>{children}</SiteFrame>
       </body>
     </html>
   );
 }
-

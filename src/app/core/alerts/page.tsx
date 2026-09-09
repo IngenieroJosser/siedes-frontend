@@ -1,45 +1,91 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getAlerts, markAlertAsReviewed, deleteAlert } from "@/services/alerts"; // Removido getAlertsStats
+import {
+  AlertTriangle,
+  Check,
+  Eye,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import {
+  deleteAlert,
+  getAlerts,
+  markAlertAsReviewed,
+} from "@/services/alerts";
 import { Alert as AlertType } from "@/lib/type";
+import {
+  CorePage,
+  CorePageHeader,
+  EmptyState,
+  ErrorState,
+  FieldLabel,
+  inputClass,
+  LoadingState,
+  Pagination,
+  Panel,
+  StatCard,
+  StatGrid,
+} from "@/components/core/CoreUI";
 
 type Alert = AlertType;
 
-// Interfaz para institución
 interface Institution {
   id: string;
   nombre: string;
 }
 
-// Función para obtener el icono basado en el nivel de riesgo de la alerta
-const getAlertRiskIcon = (nivelRiesgo: string) => {
-  switch (nivelRiesgo) {
-    case "CRITICO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-      );
-    case "ALTO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-      );
-    case "MEDIO":
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-        </svg>
-      );
-    default:
-      return (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-      );
+const severityMeta: Record<
+  string,
+  { label: string; text: string; border: string; bar: string }
+> = {
+  CRITICO: {
+    label: "Crítico",
+    text: "text-[#8f2f20]",
+    border: "border-[#8f2f20]/35",
+    bar: "bg-[#8f2f20]",
+  },
+  ALTO: {
+    label: "Alto",
+    text: "text-[#AC4A00]",
+    border: "border-[#AC4A00]/35",
+    bar: "bg-[#AC4A00]",
+  },
+  MEDIO: {
+    label: "Medio",
+    text: "text-[#6f5710]",
+    border: "border-[#8b6d14]/30",
+    bar: "bg-[#8b6d14]",
+  },
+  BAJO: {
+    label: "Bajo",
+    text: "text-[#2f6a5f]",
+    border: "border-[#2f6a5f]/28",
+    bar: "bg-[#2f6a5f]",
+  },
+};
+
+const severityWeight: Record<string, number> = {
+  CRITICO: 100,
+  ALTO: 75,
+  MEDIO: 50,
+  BAJO: 25,
+};
+
+const formatDate = (value: string) => {
+  try {
+    return new Intl.DateTimeFormat("es-CO", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return value;
   }
 };
 
@@ -52,584 +98,484 @@ export default function AlertsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [institutionFilter, setInstitutionFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
   const [deletingAlertId, setDeletingAlertId] = useState<string | null>(null);
   const [reviewingAlertId, setReviewingAlertId] = useState<string | null>(null);
+  const itemsPerPage = 8;
 
-  // Cargar alertas desde la API
+  const loadAlerts = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await getAlerts();
+      setAlerts(data || []);
+    } catch (err) {
+      console.error("Error cargando alertas:", err);
+      setError("No fue posible cargar las alertas.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadAlerts = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Obtener alertas con filtros
-        const alertsData = await getAlerts();
-        setAlerts(alertsData || []);
-
-      } catch (error) {
-        console.error("Error cargando alertas:", error);
-        setError("Error al cargar las alertas. Por favor, intenta nuevamente.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadAlerts();
   }, []);
 
-  // Obtener instituciones únicas de las alertas - CORREGIDO: eliminado el tipo 'any'
   const institutions = useMemo(() => {
-    const uniqueInstitutions = alerts.reduce((acc: Institution[], alert) => {
-      if (alert.estudiante?.institucion && !acc.find(inst => inst.id === alert.estudiante?.institucion?.id)) {
-        acc.push(alert.estudiante.institucion);
+    const unique = alerts.reduce((acc: Institution[], alert) => {
+      const institution = alert.estudiante?.institucion;
+      if (
+        institution &&
+        !acc.some((item) => item.id === institution.id)
+      ) {
+        acc.push(institution);
       }
       return acc;
     }, []);
 
-    return [
-      { id: "all", nombre: "Todas las instituciones" },
-      ...uniqueInstitutions
-    ];
+    return [{ id: "all", nombre: "Todas las instituciones" }, ...unique];
   }, [alerts]);
 
-  // Filtrar alertas
   const filteredAlerts = useMemo(() => {
-    let result = alerts;
+    const term = searchTerm.trim().toLowerCase();
 
-    // Filtro de búsqueda
-    if (searchTerm) {
-      result = result.filter(alert => {
-        const nombreCompleto = `${alert.estudiante?.usuario?.nombre || ''} ${alert.estudiante?.usuario?.apellido || ''}`;
-        return (
-          nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alert.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      });
-    }
+    return alerts.filter((alert) => {
+      const studentName = `${alert.estudiante?.usuario?.nombre || ""} ${alert.estudiante?.usuario?.apellido || ""}`.toLowerCase();
 
-    // Filtro por nivel de riesgo
-    if (riskFilter !== "all") {
-      result = result.filter(alert => alert.nivelRiesgo === riskFilter);
-    }
+      const matchesSearch =
+        !term ||
+        studentName.includes(term) ||
+        alert.descripcion.toLowerCase().includes(term);
 
-    // Filtro por estado (revisada/no revisada)
-    if (statusFilter !== "all") {
-      result = result.filter(alert =>
-        statusFilter === "revisada" ? alert.revisada : !alert.revisada
+      const matchesRisk =
+        riskFilter === "all" || alert.nivelRiesgo === riskFilter;
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "revisada" ? alert.revisada : !alert.revisada);
+
+      const matchesInstitution =
+        institutionFilter === "all" ||
+        alert.estudiante?.institucion?.id === institutionFilter;
+
+      return (
+        matchesSearch &&
+        matchesRisk &&
+        matchesStatus &&
+        matchesInstitution
       );
-    }
-
-    // Filtro por institución
-    if (institutionFilter !== "all") {
-      result = result.filter(alert => alert.estudiante?.institucion?.id === institutionFilter);
-    }
-
-    return result;
+    });
   }, [alerts, searchTerm, riskFilter, statusFilter, institutionFilter]);
 
-  // Calcular páginas
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredAlerts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredAlerts.length / itemsPerPage);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, riskFilter, statusFilter, institutionFilter]);
 
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-    window.scrollTo(0, 0);
-  };
-
-  // Calcular estadísticas
   const stats = useMemo(() => {
     const total = alerts.length;
-    const critico = alerts.filter(a => a.nivelRiesgo === "CRITICO").length;
-    const alto = alerts.filter(a => a.nivelRiesgo === "ALTO").length;
-    const revisadas = alerts.filter(a => a.revisada).length;
-    const pendientes = total - revisadas;
+    const critical = alerts.filter(
+      (alert) => alert.nivelRiesgo === "CRITICO"
+    ).length;
+    const high = alerts.filter(
+      (alert) => alert.nivelRiesgo === "ALTO"
+    ).length;
+    const reviewed = alerts.filter((alert) => alert.revisada).length;
 
-    return { total, critico, alto, revisadas, pendientes };
+    return {
+      total,
+      critical,
+      high,
+      reviewed,
+      pending: total - reviewed,
+    };
   }, [alerts]);
 
-  // Función para marcar alerta como revisada
+  const first = (currentPage - 1) * itemsPerPage;
+  const last = first + itemsPerPage;
+  const currentItems = filteredAlerts.slice(first, last);
+  const totalPages = Math.ceil(filteredAlerts.length / itemsPerPage);
+
+  const changePage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleMarkAsReviewed = async (alertId: string) => {
     setReviewingAlertId(alertId);
+    setError(null);
+
     try {
       await markAlertAsReviewed(alertId);
-
-      // Actualizar el estado local
-      setAlerts(prev => prev.map(alert =>
-        alert.id === alertId
-          ? {
-            ...alert,
-            revisada: true,
-            fechaRevision: new Date().toISOString()
-          }
-          : alert
-      ));
-    } catch (error) {
-      console.error("Error marcando alerta como revisada:", error);
-      setError("Error al marcar la alerta como revisada");
+      setAlerts((current) =>
+        current.map((alert) =>
+          alert.id === alertId
+            ? {
+                ...alert,
+                revisada: true,
+                fechaRevision: new Date().toISOString(),
+              }
+            : alert
+        )
+      );
+    } catch (err) {
+      console.error("Error marcando alerta como revisada:", err);
+      setError("No fue posible marcar la alerta como revisada.");
     } finally {
       setReviewingAlertId(null);
     }
   };
 
-  // Función para eliminar alerta
   const handleDeleteAlert = async (alertId: string) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar esta alerta? Esta acción no se puede deshacer.")) {
-      return;
-    }
+    const confirmed = window.confirm(
+      "¿Deseas eliminar esta alerta? Esta acción no se puede deshacer."
+    );
+    if (!confirmed) return;
 
     setDeletingAlertId(alertId);
+    setError(null);
+
     try {
       await deleteAlert(alertId);
-
-      // Actualizar el estado local
-      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-    } catch (error) {
-      console.error("Error eliminando alerta:", error);
-      setError("Error al eliminar la alerta");
+      setAlerts((current) =>
+        current.filter((alert) => alert.id !== alertId)
+      );
+    } catch (err) {
+      console.error("Error eliminando alerta:", err);
+      setError("No fue posible eliminar la alerta.");
     } finally {
       setDeletingAlertId(null);
     }
   };
 
-  // Formatear fecha
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F8F0AF] mx-auto mb-4"></div>
-          <p>Cargando alertas...</p>
-        </div>
-      </div>
+      <CorePage>
+        <LoadingState label="Cargando alertas tempranas..." />
+      </CorePage>
     );
   }
 
-  if (error) {
+  if (error && alerts.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-red-500/20 border border-red-500 rounded-2xl p-6 max-w-md">
-            <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-lg font-semibold mb-2">Error al cargar alertas</h3>
-            <p className="text-white/70 mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-[#AC4A00] text-white rounded-xl hover:opacity-90 transition-opacity"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-      </div>
+      <CorePage>
+        <ErrorState
+          title="No fue posible cargar las alertas"
+          message={error}
+          onRetry={loadAlerts}
+        />
+      </CorePage>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00161a] to-[#00303a] text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="pt-18 flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <Link
-              href="/core"
-              className="mt-6 mb-4 group inline-flex items-center px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 border border-white/10 hover:border-[#F8F0AF]/30 hover:scale-105"
-            >
-              <svg className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span className="group-hover:text-[#F8F0AF] transition-colors duration-300">
-                Volver al dashboard
-              </span>
-            </Link>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
-              Sistema de Alertas Tempranas
-            </h1>
-            <p className="text-white/70 mt-2">
-              Monitorea y gestiona las alertas de deserción escolar en tiempo real
-            </p>
-          </div>
-          <div className="flex space-x-3 mt-4 md:mt-0">
+    <CorePage>
+      <CorePageHeader
+        eyebrow="Sistema de alerta temprana"
+        title="Alertas"
+        description="Prioriza señales, revisa factores asociados y registra la gestión de cada caso. Una alerta orienta la revisión; no reemplaza el criterio humano."
+        actions={
+          <>
             <Link
               href="/core/students"
-              className="inline-flex items-center px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10"
+              className="inline-flex min-h-11 items-center gap-3 border border-[#002930]/16 px-4 text-sm font-medium transition hover:border-[#002930]/45"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Ver Estudiantes
+              Ver estudiantes
             </Link>
-            <Link href="/core/alerts/add" className="inline-flex items-center px-4 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium hover:opacity-90 transition-opacity">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Crear Nueva Alerta
+            <Link
+              href="/core/alerts/add"
+              className="inline-flex min-h-11 items-center gap-3 bg-[#AC4A00] px-4 text-sm font-medium text-white transition hover:bg-[#D45A10]"
+            >
+              <Plus className="h-4 w-4" />
+              Crear alerta
             </Link>
+          </>
+        }
+      />
+
+      <StatGrid>
+        <StatCard
+          label="Alertas registradas"
+          value={stats.total}
+          note="Total disponible en el sistema"
+        />
+        <StatCard
+          label="Críticas"
+          value={stats.critical}
+          note="Máxima prioridad de revisión"
+          accent="danger"
+        />
+        <StatCard
+          label="Altas"
+          value={stats.high}
+          note="Seguimiento cercano"
+          accent="orange"
+        />
+        <StatCard
+          label="Pendientes de revisión"
+          value={stats.pending}
+          note={
+            stats.total
+              ? `${((stats.pending / stats.total) * 100).toFixed(0)}% del total`
+              : "Sin alertas"
+          }
+        />
+      </StatGrid>
+
+      {error && (
+        <div
+          role="alert"
+          className="mt-6 border-l-2 border-[#8f2f20] bg-[#F8F0AF] px-4 py-3 text-sm text-[#8f2f20]"
+        >
+          {error}
+        </div>
+      )}
+
+      <Panel className="mt-8" eyebrow="Priorización" title="Filtros de alertas">
+        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <FieldLabel htmlFor="alert-search">Buscar alerta</FieldLabel>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#002930]/35" />
+              <input
+                id="alert-search"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Estudiante o descripción"
+                className={inputClass + " pl-10"}
+              />
+            </div>
+          </div>
+
+          <div>
+            <FieldLabel htmlFor="alert-risk">Nivel de riesgo</FieldLabel>
+            <select
+              id="alert-risk"
+              value={riskFilter}
+              onChange={(event) => setRiskFilter(event.target.value)}
+              className={inputClass}
+            >
+              <option value="all">Todos los niveles</option>
+              <option value="CRITICO">Crítico</option>
+              <option value="ALTO">Alto</option>
+              <option value="MEDIO">Medio</option>
+              <option value="BAJO">Bajo</option>
+            </select>
+          </div>
+
+          <div>
+            <FieldLabel htmlFor="alert-status">Estado</FieldLabel>
+            <select
+              id="alert-status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className={inputClass}
+            >
+              <option value="all">Todos los estados</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="revisada">Revisadas</option>
+            </select>
+          </div>
+
+          <div>
+            <FieldLabel htmlFor="alert-institution">Institución</FieldLabel>
+            <select
+              id="alert-institution"
+              value={institutionFilter}
+              onChange={(event) =>
+                setInstitutionFilter(event.target.value)
+              }
+              className={inputClass}
+            >
+              {institutions.map((institution) => (
+                <option key={institution.id} value={institution.id}>
+                  {institution.nombre}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+      </Panel>
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-[#00232a] rounded-xl p-4 border border-white/10">
-            <div className="text-sm text-white/60">Total alertas</div>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </div>
-          <div className="bg-[#00232a] rounded-xl p-4 border border-red-500/30">
-            <div className="text-sm text-white/60">Riesgo Crítico</div>
-            <div className="text-2xl font-bold text-red-400">
-              {stats.critico}
-            </div>
-          </div>
-          <div className="bg-[#00232a] rounded-xl p-4 border border-orange-500/30">
-            <div className="text-sm text-white/60">Riesgo Alto</div>
-            <div className="text-2xl font-bold text-orange-400">
-              {stats.alto}
-            </div>
-          </div>
-          <div className="bg-[#00232a] rounded-xl p-4 border border-white/10">
-            <div className="text-sm text-white/60">Pendientes</div>
-            <div className="text-2xl font-bold text-yellow-400">
-              {stats.pendientes}
-            </div>
-          </div>
-          <div className="bg-[#00232a] rounded-xl p-4 border border-white/10">
-            <div className="text-sm text-white/60">Revisadas</div>
-            <div className="text-2xl font-bold text-green-400">
-              {stats.revisadas}
-            </div>
-          </div>
-        </div>
+      <Panel
+        className="mt-6 overflow-hidden"
+        eyebrow="Bandeja operativa"
+        title={`${filteredAlerts.length} alertas encontradas`}
+      >
+        {currentItems.length === 0 ? (
+          <EmptyState
+            title={
+              alerts.length === 0
+                ? "No hay alertas registradas"
+                : "No hay coincidencias"
+            }
+            description={
+              alerts.length === 0
+                ? "Cuando existan señales que requieran seguimiento aparecerán en esta bandeja."
+                : "Ajusta los filtros para ampliar la consulta."
+            }
+            action={
+              alerts.length === 0 ? (
+                <Link
+                  href="/core/alerts/add"
+                  className="inline-flex min-h-11 items-center gap-3 bg-[#AC4A00] px-4 text-sm font-medium text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                  Crear alerta
+                </Link>
+              ) : undefined
+            }
+          />
+        ) : (
+          <>
+            <div className="divide-y divide-[#002930]/12">
+              {currentItems.map((alert) => {
+                const severity =
+                  severityMeta[alert.nivelRiesgo] || severityMeta.BAJO;
+                const weight = severityWeight[alert.nivelRiesgo] || 25;
+                const initials = `${alert.estudiante?.usuario?.nombre?.charAt(0) || ""}${alert.estudiante?.usuario?.apellido?.charAt(0) || ""}`;
 
-        {/* Filtros y búsqueda */}
-        <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Buscar alerta</label>
-              <div className="relative">
-                <svg className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Estudiante o descripción..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Nivel de riesgo</label>
-              <select
-                value={riskFilter}
-                onChange={(e) => setRiskFilter(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-              >
-                <option value="all">Todos los niveles</option>
-                <option value="CRITICO">Crítico</option>
-                <option value="ALTO">Alto</option>
-                <option value="MEDIO">Medio</option>
-                <option value="BAJO">Bajo</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Estado</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-              >
-                <option value="all">Todos los estados</option>
-                <option value="revisada">Revisadas</option>
-                <option value="pendiente">Pendientes</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Institución</label>
-              <select
-                value={institutionFilter}
-                onChange={(e) => setInstitutionFilter(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF]/30 focus:border-[#F8F0AF]/30 transition-all"
-              >
-                {institutions.map((institution) => (
-                  <option key={institution.id} value={institution.id}>
-                    {institution.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid de Alertas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-          {currentItems.length > 0 ? (
-            currentItems.map((alert) => (
-              <div
-                key={alert.id}
-                className={`bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border overflow-hidden transition-all hover:scale-[1.02] hover:shadow-2xl ${alert.nivelRiesgo === "CRITICO"
-                    ? "border-red-500/50 hover:shadow-red-500/20"
-                    : alert.nivelRiesgo === "ALTO"
-                      ? "border-orange-500/50 hover:shadow-orange-500/20"
-                      : "border-yellow-500/50 hover:shadow-yellow-500/20"
-                  }`}
-              >
-                {/* Header de la alerta */}
-                <div className={`p-4 ${alert.nivelRiesgo === "CRITICO"
-                    ? "bg-red-500/20"
-                    : alert.nivelRiesgo === "ALTO"
-                      ? "bg-orange-500/20"
-                      : "bg-yellow-500/20"
-                  }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`p-2 rounded-lg ${alert.nivelRiesgo === "CRITICO"
-                          ? "bg-red-500 text-white"
-                          : alert.nivelRiesgo === "ALTO"
-                            ? "bg-orange-500 text-white"
-                            : "bg-yellow-500 text-[#002930]"
-                        }`}>
-                        {getAlertRiskIcon(alert.nivelRiesgo)}
-                      </div>
-                      <div className="ml-3">
-                        <div className={`font-bold ${alert.nivelRiesgo === "CRITICO"
-                            ? "text-red-300"
-                            : alert.nivelRiesgo === "ALTO"
-                              ? "text-orange-300"
-                              : "text-yellow-300"
-                          }`}>
-                          {alert.nivelRiesgo}
-                        </div>
-                        <div className="text-sm text-white/70">
-                          {formatDate(alert.creadaEn)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${alert.revisada
-                        ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                        : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                      }`}>
-                      {alert.revisada ? "Revisada" : "Pendiente"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contenido de la alerta */}
-                <div className="p-4">
-                  {/* Información del estudiante */}
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-3">
-                      <span className="font-bold text-[#002930] text-sm">
-                        {alert.estudiante?.usuario?.nombre?.charAt(0) || ''}{alert.estudiante?.usuario?.apellido?.charAt(0) || ''}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {alert.estudiante?.usuario?.nombre || ''} {alert.estudiante?.usuario?.apellido || ''}
-                      </div>
-                      <div className="text-sm text-white/60">
-                        {alert.estudiante?.usuario.edad} • {alert.edad} años
-                      </div>
-                      <div className="text-sm text-white/60">
-                        {alert.estudiante?.institucion?.nombre}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Descripción */}
-                  <div className="mb-4">
-                    <div className="text-sm text-white/70 mb-2">{alert.descripcion}</div>
-
-                    {/* Barra de progreso de riesgo */}
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>Nivel de riesgo</span>
-                        <span className="font-bold">{alert.nivelRiesgo}</span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                return (
+                  <article
+                    key={alert.id}
+                    className="grid gap-5 p-5 transition hover:bg-white/25 xl:grid-cols-[12rem_1.25fr_.85fr_auto] xl:items-center"
+                  >
+                    <div className={"border-l-2 pl-4 " + severity.border}>
+                      <p
+                        className={
+                          "text-[10px] uppercase tracking-[0.17em] " +
+                          severity.text
+                        }
+                      >
+                        {severity.label}
+                      </p>
+                      <p className="mt-2 text-xs text-[#002930]/45">
+                        {formatDate(alert.creadaEn)}
+                      </p>
+                      <div className="mt-3 h-px bg-[#002930]/10">
                         <div
-                          className={`h-2 rounded-full ${alert.nivelRiesgo === "CRITICO" ? "bg-red-600" :
-                              alert.nivelRiesgo === "ALTO" ? "bg-orange-500" :
-                                alert.nivelRiesgo === "MEDIO" ? "bg-yellow-500" : "bg-green-500"
-                            }`}
-                          style={{
-                            width: `${alert.nivelRiesgo === "CRITICO" ? 100 :
-                                alert.nivelRiesgo === "ALTO" ? 75 :
-                                  alert.nivelRiesgo === "MEDIO" ? 50 : 25
-                              }%`
-                          }}
-                        ></div>
+                          className={"h-px " + severity.bar}
+                          style={{ width: `${weight}%` }}
+                        />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Factores de riesgo */}
-                  <div className="mb-4">
-                    <div className="text-sm font-medium mb-2 text-white/80">Factores identificados:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {alert.factores.slice(0, 3).map((factor, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-white/5 rounded-lg text-xs text-white/70 border border-white/10"
-                        >
-                          {factor}
+                    <div className="min-w-0">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#002930]/14 text-xs font-medium text-[#AC4A00]">
+                          {initials || "—"}
                         </span>
-                      ))}
-                      {alert.factores.length > 3 && (
-                        <span className="px-2 py-1 bg-white/5 rounded-lg text-xs text-white/70 border border-white/10">
-                          +{alert.factores.length - 3} más
-                        </span>
-                      )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {alert.estudiante?.usuario?.nombre || "Estudiante"}{" "}
+                            {alert.estudiante?.usuario?.apellido || ""}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-[#002930]/42">
+                            {alert.estudiante?.institucion?.nombre ||
+                              "Sin institución"}
+                          </p>
+                          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#002930]/62">
+                            {alert.descripcion}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Acciones */}
-                  <div className="flex justify-between items-center pt-4 border-t border-white/10">
-                    <div className="flex space-x-2">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.16em] text-[#002930]/38">
+                        Factores asociados
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {alert.factores.slice(0, 3).map((factor) => (
+                          <span
+                            key={factor}
+                            className="border border-[#002930]/12 px-2 py-1 text-[10px] text-[#002930]/58"
+                          >
+                            {factor}
+                          </span>
+                        ))}
+                        {alert.factores.length > 3 && (
+                          <span className="border border-[#002930]/12 px-2 py-1 text-[10px] text-[#002930]/45">
+                            +{alert.factores.length - 3}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-4 text-xs text-[#002930]/45">
+                        Estado:{" "}
+                        <span className="font-medium text-[#002930]">
+                          {alert.revisada ? "Revisada" : "Pendiente"}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                       <Link
                         href={`/core/students/${alert.estudianteId}`}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                        className="flex h-9 w-9 items-center justify-center border border-[#002930]/14 transition hover:border-[#002930]/45"
                         title="Ver estudiante"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                        <Eye className="h-4 w-4" />
                       </Link>
+
                       <Link
                         href={`/core/alerts/edit/${alert.id}`}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                        className="flex h-9 w-9 items-center justify-center border border-[#002930]/14 transition hover:border-[#002930]/45"
                         title="Editar alerta"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Pencil className="h-4 w-4" />
                       </Link>
+
                       <button
+                        type="button"
                         onClick={() => handleDeleteAlert(alert.id)}
                         disabled={deletingAlertId === alert.id}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                        className="flex h-9 w-9 items-center justify-center border border-[#8f2f20]/20 text-[#8f2f20] transition hover:border-[#8f2f20]/50 disabled:opacity-40"
                         title="Eliminar alerta"
                       >
-                        {deletingAlertId === alert.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
-                        ) : (
-                          <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        )}
+                        <Trash2 className="h-4 w-4" />
                       </button>
+
+                      {!alert.revisada && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsReviewed(alert.id)}
+                          disabled={reviewingAlertId === alert.id}
+                          className="inline-flex min-h-9 items-center gap-2 bg-[#002930] px-3 text-xs font-medium text-white transition hover:bg-[#00343d] disabled:opacity-50"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          {reviewingAlertId === alert.id
+                            ? "Procesando..."
+                            : "Marcar revisada"}
+                        </button>
+                      )}
                     </div>
-
-                    {!alert.revisada && (
-                      <button
-                        onClick={() => handleMarkAsReviewed(alert.id)}
-                        disabled={reviewingAlertId === alert.id}
-                        className="px-3 py-1 bg-green-500/20 text-green-300 rounded-lg text-sm hover:bg-green-500/30 transition-colors border border-green-500/30 disabled:opacity-50 flex items-center"
-                      >
-                        {reviewingAlertId === alert.id ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-300 mr-2"></div>
-                            Procesando...
-                          </>
-                        ) : (
-                          "Marcar como revisada"
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 p-12 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium mb-2">No hay alertas activas</h3>
-                <p className="text-white/60 mb-6">
-                  {alerts.length === 0
-                    ? "No se han generado alertas en el sistema"
-                    : "No se encontraron alertas con los filtros aplicados"
-                  }
-                </p>
-                {alerts.length === 0 && (
-                  <Link
-                    href="/core/students"
-                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium rounded-xl hover:opacity-90 transition-opacity"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Ver Estudiantes
-                  </Link>
-                )}
-              </div>
+                  </article>
+                );
+              })}
             </div>
-          )}
-        </div>
 
-        {/* Paginación */}
-        {filteredAlerts.length > 0 && (
-          <div className="bg-[#00232a]/80 backdrop-blur-sm rounded-2xl border border-white/10 px-6 py-4 flex items-center justify-between">
-            <p className="text-sm text-white/60">
-              Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredAlerts.length)} de {filteredAlerts.length} alertas
-            </p>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1 rounded-lg bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
-              >
-                Anterior
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1 rounded-lg transition-colors ${currentPage === page
-                      ? 'bg-[#AC4A00] text-white'
-                      : 'bg-white/5 hover:bg-white/10'
-                    }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 rounded-lg bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onChange={changePage}
+              summary={`Mostrando ${first + 1}-${Math.min(
+                last,
+                filteredAlerts.length
+              )} de ${filteredAlerts.length}`}
+            />
+          </>
         )}
+      </Panel>
+
+      <div className="mt-6 flex items-start gap-3 border-l-2 border-[#AC4A00] bg-[#F8F0AF] px-4 py-4">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#AC4A00]" />
+        <p className="text-xs leading-5 text-[#002930]/52">
+          La prioridad mostrada sirve para organizar la revisión. Cualquier
+          intervención debe considerar información adicional, contexto y criterio
+          profesional.
+        </p>
       </div>
-    </div>
+    </CorePage>
   );
 }

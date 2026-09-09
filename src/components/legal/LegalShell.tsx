@@ -5,13 +5,13 @@ import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
 export type LegalSection = {
   number: string;
   id: string;
-  title: string;
+  title: ReactNode;
   content: ReactNode;
 };
 
 type LegalShellProps = {
   eyebrow: string;
-  title: string;
+  title: ReactNode;
   description: string;
   statusLabel: string;
   notice?: ReactNode;
