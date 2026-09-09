@@ -1,231 +1,212 @@
-"use client";
-
-import { useState } from "react";
-import { motion } from "framer-motion";
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Send,
+  ArrowRight,
   Mail,
-  User,
-  MessageSquare,
-  Phone,
   MapPin,
-  CheckCircle2,
-  Loader2,
-  ArrowLeft
+  Phone,
+  ShieldCheck,
 } from "lucide-react";
+import ContactForm from "@/components/contact/ContactForm";
+
+export const metadata: Metadata = {
+  title: "Contacto | SIEDES",
+  description:
+    "Canales de contacto e información para comunicarse con el proyecto SIEDES.",
+};
 
 export default function ContactoPage() {
-  const [form, setForm] = useState({ nombre: "", email: "", mensaje: "" });
-  const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState(false);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEnviando(true);
-
-    // Simulación de envío
-    setTimeout(() => {
-      setEnviando(false);
-      setEnviado(true);
-      setForm({ nombre: "", email: "", mensaje: "" });
-    }, 2000);
-  };
-
   return (
-    <div className="min-h-screen bg-[#002930] text-white pt-20">
-      {/* Elementos decorativos de fondo */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-20 w-80 h-80 rounded-full bg-[#F8F0AF] opacity-5"></div>
-        <div className="absolute -bottom-40 -left-20 w-80 h-80 rounded-full bg-[#AC4A00] opacity-5"></div>
-        <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-72 bg-[#F8F0AF] opacity-3 blur-3xl"></div>
-      </div>
+    <div className="min-h-screen overflow-hidden bg-[#001c22] text-white">
+      <section className="relative isolate border-b border-white/10">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(248,240,175,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(248,240,175,0.04)_1px,transparent_1px)] bg-[size:72px_72px]" />
+          <div className="absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full border border-[#F8F0AF]/10" />
+          <div className="absolute -bottom-44 -left-36 h-[28rem] w-[28rem] bg-[#AC4A00]/10 blur-3xl" />
+        </div>
 
-      {/* Botón de volver */}
-      <div className="container mx-auto px-4 mb-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-[#F8F0AF] hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Volver al inicio
-        </Link>
-      </div>
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-6 md:py-28 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:px-8">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="border border-[#F8F0AF]/25 bg-[#F8F0AF]/5 px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+                Contacto
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-white/35">
+                Quibdó · Chocó · Colombia
+              </span>
+            </div>
 
-      <div className="container mx-auto px-4 pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="max-w-4xl mx-auto"
-        >
-          {/* Encabezado */}
-          <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-[#F8F0AF] ring-1 ring-white/10 mb-6">
-              <span className="h-2 w-2 rounded-full bg-[#F8F0AF] animate-pulse"></span>
-              Contacto directo
-            </span>
-            
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Hablemos sobre <span className="text-[#F8F0AF]">SIEDES</span>
+            <h1 className="mt-8 max-w-5xl text-[clamp(3.3rem,7.6vw,6.8rem)] font-medium leading-[0.91] tracking-[-0.055em]">
+              Conversemos sobre
+              <span className="block text-[#F8F0AF]">SIEDES.</span>
             </h1>
-            
-            <p className="text-lg text-white/80 max-w-2xl mx-auto">
-              Estamos aquí para responder tus preguntas, recibir tus comentarios y explorar cómo podemos colaborar para reducir la deserción escolar.
+
+            <p className="mt-8 max-w-3xl border-t border-white/10 pt-7 text-base leading-7 text-white/60 md:text-lg">
+              Este espacio reúne los canales publicados del proyecto para
+              consultas generales, colaboración e información sobre la
+              plataforma.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Información de contacto */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6 text-[#F8F0AF]">Nuestros canales</h2>
-              
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-[#F8F0AF]/10 flex items-center justify-center text-[#F8F0AF] flex-shrink-0">
-                    <Mail className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Correo electrónico</h3>
-                    <p className="text-white/80">info@siedes.org</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-[#F8F0AF]/10 flex items-center justify-center text-[#F8F0AF] flex-shrink-0">
-                    <Phone className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Teléfono</h3>
-                    <p className="text-white/80">+57 (604) 123 4567</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-[#F8F0AF]/10 flex items-center justify-center text-[#F8F0AF] flex-shrink-0">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Ubicación</h3>
-                    <p className="text-white/80">Quibdó, Chocó, Colombia</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-[#00343d] to-[#001c22] border border-white/10">
-                <h3 className="font-bold text-lg mb-3 text-[#F8F0AF]">Horario de atención</h3>
-                <p className="text-white/80 mb-1">Lunes a Viernes: 8:00 AM - 6:00 PM</p>
-                <p className="text-white/80">Sábados: 9:00 AM - 1:00 PM</p>
-              </div>
+          <div className="border border-white/10 bg-[#002930]/85 p-6 md:p-8">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#F8F0AF]">
+              ¿Tu consulta es sobre un estudiante?
+            </p>
+            <h2 className="mt-3 text-2xl font-medium tracking-[-0.03em]">
+              Usa la ruta de solicitud de apoyo.
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-white/52">
+              Las situaciones educativas que requieren revisión deben registrarse
+              en el flujo diseñado para asociar institución, estudiante, motivo y
+              contexto.
+            </p>
+
+            <Link
+              href="/solicitar-ayuda"
+              className="group mt-7 inline-flex min-h-11 items-center justify-between gap-8 border border-[#F8F0AF]/25 px-4 text-sm font-medium text-[#F8F0AF] transition hover:bg-[#F8F0AF] hover:text-[#002930]"
+            >
+              Solicitar apoyo
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#F8F0AF] py-14 text-[#002930] md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-[.78fr_1.22fr] lg:gap-16 lg:px-8">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#AC4A00]">
+              Canales publicados
+            </p>
+            <h2 className="mt-4 max-w-md text-3xl font-medium leading-[1.02] tracking-[-0.04em] md:text-4xl">
+              Una vía clara según el tipo de contacto.
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-6 text-[#002930]/55">
+              Evitamos mostrar horarios, teléfonos o promesas de respuesta que
+              no estén respaldados por el proyecto.
+            </p>
+
+            <div className="mt-8 border-t border-[#002930]/15">
+              <ContactChannel
+                index="01"
+                icon={<Mail className="h-4 w-4" />}
+                label="Correo general"
+                value="siedes.uib@gmail.com"
+                href="mailto:siedes.uib@gmail.com"
+              />
+              <ContactChannel
+                index="02"
+                icon={<Phone className="h-4 w-4" />}
+                label="Contacto"
+                value="+57 323 284 2193"
+                href="tel:+573232842193"
+              />
+              <ContactChannel
+                index="03"
+                icon={<MapPin className="h-4 w-4" />}
+                label="Contexto del proyecto"
+                value="Quibdó, Chocó · Colombia"
+              />
             </div>
 
-            {/* Formulario de contacto */}
-            <div className="bg-gradient-to-b from-[#00343d] to-[#002029] rounded-2xl border border-white/10 p-6 md:p-8">
-              {!enviado ? (
-                <>
-                  <h2 className="text-2xl font-bold mb-6 text-[#F8F0AF]">Envíanos un mensaje</h2>
-                  
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Nombre */}
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#F8F0AF]" />
-                      <input
-                        type="text"
-                        name="nombre"
-                        placeholder="Tu nombre completo"
-                        value={form.nombre}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/50 focus:border-[#F8F0AF] focus:ring-2 focus:ring-[#F8F0AF]/20 focus:bg-white/10 transition"
-                      />
-                    </div>
+            <div className="mt-8 flex items-start gap-3 border-l-2 border-[#AC4A00] pl-4">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#AC4A00]" />
+              <p className="text-xs leading-5 text-[#002930]/48">
+                Para información sensible de estudiantes utiliza únicamente los
+                flujos autorizados de la plataforma y evita incluir datos
+                innecesarios en un correo general.
+              </p>
+            </div>
+          </aside>
 
-                    {/* Email */}
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#F8F0AF]" />
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="Tu correo electrónico"
-                        value={form.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/50 focus:border-[#F8F0AF] focus:ring-2 focus:ring-[#F8F0AF]/20 focus:bg-white/10 transition"
-                      />
-                    </div>
+          <div className="border border-[#002930]/15">
+            <div className="border-b border-[#002930]/15 p-5 md:p-7">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#AC4A00]">
+                Consulta general
+              </p>
+              <h2 className="mt-3 text-2xl font-medium tracking-[-0.035em] md:text-3xl">
+                Preparar un mensaje
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#002930]/52">
+                Completa los campos y abriremos tu aplicación de correo con la
+                información preparada para enviarla al canal oficial publicado.
+              </p>
+            </div>
 
-                    {/* Mensaje */}
-                    <div className="relative">
-                      <MessageSquare className="absolute left-3 top-4 text-[#F8F0AF]" />
-                      <textarea
-                        name="mensaje"
-                        placeholder="Escribe tu mensaje aquí..."
-                        value={form.mensaje}
-                        onChange={handleChange}
-                        rows={5}
-                        required
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/50 focus:border-[#F8F0AF] focus:ring-2 focus:ring-[#F8F0AF]/20 focus:bg-white/10 transition resize-none"
-                      ></textarea>
-                    </div>
+            <div className="p-5 md:p-7">
+              <ContactForm />
+            </div>
 
-                    {/* Botón */}
-                    <motion.button
-                      whileHover={{ scale: enviando ? 1 : 1.02 }}
-                      whileTap={{ scale: enviando ? 1 : 0.98 }}
-                      type="submit"
-                      disabled={enviando}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#AC4A00] to-[#D45A10] text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-[#AC4A00]/30 hover:shadow-xl hover:shadow-[#AC4A00]/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {enviando ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5" />
-                          Enviar mensaje
-                        </>
-                      )}
-                    </motion.button>
-                  </form>
-                </>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center space-y-6 text-center py-8"
-                >
-                  <div className="w-16 h-16 rounded-full bg-[#F8F0AF]/10 flex items-center justify-center">
-                    <CheckCircle2 className="w-10 h-10 text-[#F8F0AF]" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">
-                    ¡Mensaje enviado con éxito!
-                  </h2>
-                  <p className="text-white/80">
-                    Gracias por contactarnos. Nuestro equipo se pondrá en comunicación contigo pronto.
-                  </p>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setEnviado(false)}
-                    className="mt-4 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] text-[#002930] font-semibold rounded-xl shadow-md hover:shadow-xl transition-all"
+            <div className="grid gap-px border-t border-[#002930]/15 bg-[#002930]/15 md:grid-cols-2">
+              <div className="bg-[#F8F0AF] p-5">
+                <p className="text-[9px] uppercase tracking-[0.16em] text-[#AC4A00]">
+                  Consultas generales
+                </p>
+                <p className="mt-3 text-sm leading-6 text-[#002930]/55">
+                  Información sobre la plataforma, tecnología, enfoque
+                  etnoeducativo o posibilidades de colaboración.
+                </p>
+              </div>
+
+              <div className="bg-[#F8F0AF] p-5">
+                <p className="text-[9px] uppercase tracking-[0.16em] text-[#AC4A00]">
+                  Solicitudes de apoyo
+                </p>
+                <p className="mt-3 text-sm leading-6 text-[#002930]/55">
+                  Para registrar una situación educativa utiliza
+                  <Link
+                    href="/solicitar-ayuda"
+                    className="ml-1 font-medium text-[#AC4A00] underline decoration-[#AC4A00]/30 underline-offset-4"
                   >
-                    <Send className="w-5 h-5" />
-                    Enviar otro mensaje
-                  </motion.button>
-                </motion.div>
-              )}
+                    Solicitar ayuda
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function ContactChannel({
+  index,
+  icon,
+  label,
+  value,
+  href,
+}: {
+  index: string;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const content = (
+    <div className="grid grid-cols-[2rem_2rem_1fr_auto] items-center gap-3 border-b border-[#002930]/15 py-4">
+      <span className="text-[9px] tracking-[0.16em] text-[#AC4A00]">
+        {index}
+      </span>
+      <span className="flex h-8 w-8 items-center justify-center border border-[#002930]/14 text-[#AC4A00]">
+        {icon}
+      </span>
+      <div>
+        <p className="text-[9px] uppercase tracking-[0.14em] text-[#002930]/38">
+          {label}
+        </p>
+        <p className="mt-1 text-sm font-medium">{value}</p>
+      </div>
+      {href && <ArrowRight className="h-4 w-4 text-[#002930]/25" />}
+    </div>
+  );
+
+  return href ? (
+    <a href={href} className="block transition hover:bg-white/25">
+      {content}
+    </a>
+  ) : (
+    content
   );
 }
