@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
   BookOpenCheck,
+  BrainCircuit,
   Clock3,
+  Database,
   GraduationCap,
+  History,
+  RefreshCw,
   MapPin,
   Pencil,
   Plus,
@@ -16,6 +20,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { getStudentById } from "@/services/students";
+import { getStudentPredictionHistory, predictStudentRisk } from "@/services/predictions";
 import {
   Alerta,
   Intervencion as IntervencionDetalle,
@@ -23,6 +28,7 @@ import {
   RegistroAcademico,
   Student as StudentType,
 } from "@/lib/type";
+import { AiPredictionHistoryItem, AiStudentPrediction } from "@/lib/prediction-types";
 import {
   CorePage,
   CorePageHeader,
@@ -61,7 +67,7 @@ type Student = StudentType & {
   intervenciones?: IntervencionDetalle[];
 };
 
-type TabId = "general" | "alertas" | "academico" | "contexto";
+type TabId = "general" | "ia" | "alertas" | "academico" | "contexto";
 
 const tabs: Array<{
   id: TabId;
@@ -69,6 +75,7 @@ const tabs: Array<{
   icon: typeof UserRound;
 }> = [
   { id: "general", label: "Resumen", icon: UserRound },
+  { id: "ia", label: "IA predictiva", icon: BrainCircuit },
   { id: "alertas", label: "Alertas", icon: AlertTriangle },
   { id: "academico", label: "Académico", icon: GraduationCap },
   { id: "contexto", label: "Contexto", icon: MapPin },
@@ -160,8 +167,13 @@ export default function StudentDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [predictionHistory, setPredictionHistory] = useState<AiPredictionHistoryItem[]>([]);
+  const [latestPrediction, setLatestPrediction] = useState<AiStudentPrediction | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [predicting, setPredicting] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
-  const loadStudent = async () => {
+  const loadStudent = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -177,13 +189,59 @@ export default function StudentDetail() {
     } finally {
       setIsLoading(false);
     }
+  }, [studentId]);
+
+
+  const loadPredictionHistory = useCallback(async () => {
+    if (!studentId) return;
+    try {
+      setAiLoading(true);
+      setAiError(null);
+      const history = await getStudentPredictionHistory(studentId);
+      setPredictionHistory(history || []);
+    } catch (err) {
+      setPredictionHistory([]);
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible consultar el historial predictivo."
+      );
+    } finally {
+      setAiLoading(false);
+    }
+  }, [studentId]);
+
+  const handlePredict = async () => {
+    if (!studentId || !student) return;
+    try {
+      setPredicting(true);
+      setAiError(null);
+      const prediction = await predictStudentRisk(studentId, true);
+      setLatestPrediction(prediction);
+      setStudent((current) =>
+        current
+          ? { ...current, riesgoDesercion: prediction.probability }
+          : current
+      );
+      await loadPredictionHistory();
+      setActiveTab("ia");
+    } catch (err) {
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible ejecutar la predicción."
+      );
+    } finally {
+      setPredicting(false);
+    }
   };
 
   useEffect(() => {
     if (studentId) {
       loadStudent();
+      loadPredictionHistory();
     }
-  }, [studentId]);
+  }, [studentId, loadStudent, loadPredictionHistory]);
 
   const stats = useMemo(() => {
     if (!student) {
@@ -282,7 +340,7 @@ export default function StudentDetail() {
 
                 <div className={"border-l-2 pl-4 " + risk.border}>
                   <p className="text-[9px] uppercase tracking-[0.16em] text-[#002930]/38">
-                    Riesgo registrado
+                    Señal de riesgo actual
                   </p>
                   <div className="mt-2 flex items-baseline gap-3">
                     <span className={"text-lg font-medium " + risk.text}>
@@ -461,6 +519,86 @@ export default function StudentDetail() {
                 </p>
               </div>
             </section>
+          </div>
+        )}
+
+        {activeTab === "ia" && (
+          <div className="p-5 md:p-6">
+            <div className="flex flex-col gap-5 border-b border-[#002930]/12 pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.18em] text-[#AC4A00]">
+                  Inteligencia artificial
+                </p>
+                <h3 className="mt-2 text-lg font-medium">
+                  Predicción, factores y trazabilidad
+                </h3>
+                <p className="mt-2 max-w-2xl text-xs leading-5 text-[#002930]/48">
+                  SIEDES consulta el backend, que construye las variables desde
+                  PostgreSQL y delega la inferencia al servicio FastAPI. La
+                  predicción persistida conserva versión del modelo e historial.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePredict}
+                disabled={predicting}
+                className="inline-flex min-h-11 items-center justify-center gap-3 bg-[#AC4A00] px-4 text-sm font-medium text-white transition hover:bg-[#D45A10] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw className={`h-4 w-4 ${predicting ? "animate-spin" : ""}`} />
+                {predicting ? "Calculando..." : "Actualizar predicción IA"}
+              </button>
+            </div>
+
+            {aiError && (
+              <div className="mt-5">
+                <InlineNotice tone="warning" title="Predicción no disponible">
+                  {aiError} La trayectoria del estudiante permanece disponible y
+                  la inferencia puede reintentarse cuando el servicio de IA esté
+                  operativo.
+                </InlineNotice>
+              </div>
+            )}
+
+            {aiLoading ? (
+              <div className="py-12 text-center">
+                <RefreshCw className="mx-auto h-5 w-5 animate-spin text-[#AC4A00]" />
+                <p className="mt-3 text-xs text-[#002930]/45">
+                  Consultando historial predictivo...
+                </p>
+              </div>
+            ) : latestPrediction || predictionHistory.length > 0 ? (
+              <AiPredictionView
+                livePrediction={latestPrediction}
+                history={predictionHistory}
+              />
+            ) : (
+              <EmptyState
+                title="Sin predicciones persistidas"
+                description="Todavía no existe un historial de inferencia para esta trayectoria. Ejecuta una predicción cuando el contexto y el registro académico estén suficientemente actualizados."
+                action={
+                  <button
+                    type="button"
+                    onClick={handlePredict}
+                    disabled={predicting}
+                    className="inline-flex min-h-10 items-center gap-2 bg-[#AC4A00] px-4 text-xs font-medium text-white disabled:opacity-60"
+                  >
+                    <BrainCircuit className="h-4 w-4" />
+                    Generar primera predicción
+                  </button>
+                }
+              />
+            )}
+
+            <div className="mt-6">
+              <InlineNotice tone="info" title="Interpretación humana obligatoria">
+                La probabilidad expresa una señal de priorización, no una certeza de
+                deserción. Los factores deben contrastarse con la trayectoria,
+                contexto territorial, situación familiar y criterio pedagógico. El
+                autorreconocimiento étnico no debe convertirse en una penalización
+                automática del riesgo.
+              </InlineNotice>
+            </div>
           </div>
         )}
 
@@ -752,6 +890,161 @@ export default function StudentDetail() {
         </p>
       </div>
     </CorePage>
+  );
+}
+
+function AiPredictionView({
+  livePrediction,
+  history,
+}: {
+  livePrediction: AiStudentPrediction | null;
+  history: AiPredictionHistoryItem[];
+}) {
+  const persisted = history[0];
+  const probability = livePrediction?.probability ?? persisted?.probability ?? 0;
+  const level = livePrediction?.risk_level ?? persisted?.nivelRiesgo ?? getRiskLevel(probability);
+  const modelType = livePrediction?.model_type ?? persisted?.modelType ?? "No informado";
+  const modelVersion = livePrediction?.model_version ?? persisted?.modelVersion ?? "No informado";
+  const prior = livePrediction?.institutional_prior ?? persisted?.institutionalPrior ?? null;
+  const factors = livePrediction?.factors ?? (Array.isArray(persisted?.factores) ? persisted?.factores : []) ?? [];
+  const warnings = livePrediction?.warnings ?? (Array.isArray(persisted?.warnings) ? persisted?.warnings : []) ?? [];
+  const meta = riskMeta[level] || riskMeta[getRiskLevel(probability)];
+
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="grid gap-px border border-[#002930]/12 bg-[#002930]/12 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="bg-[#F8F0AF] p-5">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+            Probabilidad
+          </p>
+          <p className={`mt-3 text-3xl font-medium ${meta.text}`}>
+            {(probability * 100).toFixed(0)}%
+          </p>
+          <p className="mt-2 text-xs text-[#002930]/42">Nivel {meta.label.toLowerCase()}</p>
+        </div>
+        <div className="bg-[#F8F0AF] p-5">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+            Modelo
+          </p>
+          <p className="mt-3 break-words text-sm font-medium">{modelType}</p>
+          <p className="mt-2 break-all text-xs text-[#002930]/42">{modelVersion}</p>
+        </div>
+        <div className="bg-[#F8F0AF] p-5">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+            Prior institucional
+          </p>
+          <p className="mt-3 text-xl font-medium">
+            {typeof prior === "number" ? `${(prior * 100).toFixed(1)}%` : "No disponible"}
+          </p>
+          <p className="mt-2 text-xs text-[#002930]/42">Contexto agregado, cuando aplica</p>
+        </div>
+        <div className="bg-[#F8F0AF] p-5">
+          <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+            Historial
+          </p>
+          <p className="mt-3 text-xl font-medium">{history.length}</p>
+          <p className="mt-2 text-xs text-[#002930]/42">Predicciones persistidas</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_.92fr]">
+        <section className="border border-[#002930]/12">
+          <div className="border-b border-[#002930]/12 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="h-4 w-4 text-[#AC4A00]" />
+              <h4 className="text-sm font-medium">Factores informados por el modelo</h4>
+            </div>
+          </div>
+          {factors.length > 0 ? (
+            <div className="divide-y divide-[#002930]/10">
+              {factors.map((factor, index) => (
+                <div key={`${factor.factor}-${index}`} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-start">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {factor.factor.replaceAll("_", " ")}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[#002930]/45">
+                      {factor.explanation || "Factor incluido en la explicación de la inferencia."}
+                    </p>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <p className={
+                      "text-[9px] uppercase tracking-[0.14em] " +
+                      (factor.direction === "AUMENTA"
+                        ? "text-[#AC4A00]"
+                        : factor.direction === "REDUCE"
+                          ? "text-[#2f6a5f]"
+                          : "text-[#315c75]")
+                    }>
+                      {factor.direction}
+                    </p>
+                    <p className="mt-1 text-xs text-[#002930]/38">
+                      contrib. {Number(factor.contribution || 0).toFixed(3)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="px-5 py-8 text-sm text-[#002930]/45">
+              Esta inferencia no informó factores explicativos estructurados.
+            </p>
+          )}
+        </section>
+
+        <section className="border border-[#002930]/12">
+          <div className="border-b border-[#002930]/12 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-[#AC4A00]" />
+              <h4 className="text-sm font-medium">Historial de predicciones</h4>
+            </div>
+          </div>
+          {history.length > 0 ? (
+            <div className="max-h-[360px] overflow-auto divide-y divide-[#002930]/10">
+              {history.map((item) => {
+                const itemMeta = riskMeta[item.nivelRiesgo] || riskMeta[getRiskLevel(item.probability)];
+                return (
+                  <div key={item.id} className="grid grid-cols-[5.5rem_1fr] gap-4 px-5 py-4">
+                    <div>
+                      <p className={`text-sm font-medium ${itemMeta.text}`}>
+                        {(item.probability * 100).toFixed(0)}%
+                      </p>
+                      <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#002930]/36">
+                        {itemMeta.label}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium">{item.modelVersion}</p>
+                      <p className="mt-1 text-[10px] text-[#002930]/38">
+                        {formatDateTime(item.creadaEn)} · {item.modelType}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="px-5 py-8 text-sm text-[#002930]/45">Sin historial persistido.</p>
+          )}
+        </section>
+      </div>
+
+      {warnings.length > 0 && (
+        <section className="border border-[#AC4A00]/20 p-5">
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-[#AC4A00]" />
+            <h4 className="text-sm font-medium">Advertencias del modelo</h4>
+          </div>
+          <ul className="mt-4 space-y-2">
+            {warnings.map((warning, index) => (
+              <li key={`${warning}-${index}`} className="text-xs leading-5 text-[#002930]/50">
+                {warning}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
   );
 }
 

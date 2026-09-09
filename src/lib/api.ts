@@ -103,7 +103,7 @@ export const apiRequest = async <T>(
         } else if (status === 401) {
           if (typeof window !== "undefined") {
             localStorage.removeItem("token");
-            window.location.href = "/login";
+            window.location.href = "/iniciar-sesion";
           }
           throw new Error("No autorizado. Por favor, inicia sesión nuevamente.");
         } else if (status === 403) {

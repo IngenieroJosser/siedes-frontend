@@ -371,8 +371,12 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
-  user: UserAuthResponse;
+  success: boolean;
+  message: string;
+  data: {
+    user: UserAuthResponse;
+    token?: string;
+  };
 }
 
 export interface RegisterRequest {
@@ -410,8 +414,13 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
-  token: string;
-  user: UserAuthResponse;
+  success: boolean;
+  message: string;
+  data?: {
+    user: UserAuthResponse;
+    token?: string;
+  };
+  error?: string;
 }
 
 export interface ResetPasswordRequest {
@@ -444,11 +453,12 @@ export interface ForgotPasswordResponse {
 }
 
 export enum Rol {
-  ESTUDIANTE,
-  DOCENTE,
-  PADRE,
-  COORDINADOR,
-  LIDER_COMUNITARIO,
+  ADMIN = "ADMIN",
+  ESTUDIANTE = "ESTUDIANTE",
+  DOCENTE = "DOCENTE",
+  PADRE = "PADRE",
+  COORDINADOR = "COORDINADOR",
+  LIDER_COMUNITARIO = "LIDER_COMUNITARIO",
 }
 
 export interface AlertaFrontend {

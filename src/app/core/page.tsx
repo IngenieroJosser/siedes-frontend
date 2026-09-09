@@ -6,9 +6,9 @@ import {
   AlertTriangle,
   ArrowRight,
   BookOpenCheck,
+  BrainCircuit,
   CheckCircle2,
   GraduationCap,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 import { getStudents } from "@/services/students";
@@ -508,7 +508,7 @@ export default function DashboardCore() {
       </div>
 
       <Panel className="mt-6" eyebrow="Operación" title="Accesos principales">
-        <div className="grid gap-px bg-[#002930]/12 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-px bg-[#002930]/12 md:grid-cols-2 xl:grid-cols-5">
           <ActionCard
             icon={<Users className="h-5 w-5" />}
             index="01"
@@ -531,8 +531,15 @@ export default function DashboardCore() {
             href="/core/interventions"
           />
           <ActionCard
-            icon={<GraduationCap className="h-5 w-5" />}
+            icon={<BrainCircuit className="h-5 w-5" />}
             index="04"
+            title="IA predictiva"
+            description="Consultar modelo, estado y trazabilidad."
+            href="/core/ai"
+          />
+          <ActionCard
+            icon={<GraduationCap className="h-5 w-5" />}
+            index="05"
             title="Reportes"
             description="Analizar los registros disponibles."
             href="/core/reports"

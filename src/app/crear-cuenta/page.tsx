@@ -119,7 +119,7 @@ export default function RegisterPage() {
   ) => {
     const { name, value, type } = event.target;
 
-    const enumFields = new Set(["rol", "etnia"]);
+    const enumFields = new Set(["etnia"]);
     const numericFields = new Set([
       "edad",
       "distanciaEscuela",

@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       const response = await login(formData);
 
-      switch (response.user.rol) {
+      switch (response.data.user.rol) {
         case Rol.ESTUDIANTE:
           router.push("/core/students");
           break;
