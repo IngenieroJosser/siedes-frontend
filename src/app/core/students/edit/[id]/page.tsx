@@ -1,659 +1,631 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { updateStudent, getStudentById } from "@/services/students";
-import { ContextoEstudiante, UpdateStudentData, StudentWithFrontendData } from "@/lib/type";
+import {
+  ArrowLeft,
+  Check,
+  LoaderCircle,
+  Save,
+  ShieldCheck,
+} from "lucide-react";
+import {
+  Institution,
+  Student,
+  UpdateStudentData,
+} from "@/lib/type";
+import { getInstitutions } from "@/services/institution";
+import { getStudentById, updateStudent } from "@/services/students";
+import {
+  CorePage,
+  CorePageHeader,
+  DetailItem,
+  ErrorState,
+  FieldLabel,
+  FormSection,
+  InlineNotice,
+  LoadingState,
+  Panel,
+  inputClass,
+} from "@/components/core/CoreUI";
+
+type FormState = {
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  edad: string;
+  genero: string;
+  etnia: string;
+  grado: string;
+  institucionId: string;
+};
+
+const riskMeta = {
+  CRITICO: {
+    label: "Crítico",
+    text: "text-[#8f2f20]",
+    bar: "bg-[#8f2f20]",
+    border: "border-[#8f2f20]/30",
+  },
+  ALTO: {
+    label: "Alto",
+    text: "text-[#AC4A00]",
+    bar: "bg-[#AC4A00]",
+    border: "border-[#AC4A00]/30",
+  },
+  MEDIO: {
+    label: "Medio",
+    text: "text-[#6f5710]",
+    bar: "bg-[#8b6d14]",
+    border: "border-[#8b6d14]/30",
+  },
+  BAJO: {
+    label: "Bajo",
+    text: "text-[#2f6a5f]",
+    bar: "bg-[#2f6a5f]",
+    border: "border-[#2f6a5f]/30",
+  },
+};
+
+const getRiskLevel = (value: number) => {
+  if (value >= 0.8) return "CRITICO";
+  if (value >= 0.6) return "ALTO";
+  if (value >= 0.4) return "MEDIO";
+  return "BAJO";
+};
+
+const ethnicityOptions = [
+  ["NINGUNA", "No se autorreconoce en grupo étnico"],
+  ["AFRODESCENDIENTE", "Afrocolombiano(a) / afrodescendiente"],
+  ["INDIGENA", "Pueblos indígenas"],
+  ["ROM", "Pueblo Rrom / gitano"],
+  ["RAIZAL", "Raizal"],
+  ["PALENQUERO", "Palenquero"],
+] as const;
 
 export default function EditStudentPage() {
   const params = useParams();
   const router = useRouter();
-  const [student, setStudent] = useState<StudentWithFrontendData | null>(null);
+  const studentId = params.id as string;
+
+  const [student, setStudent] = useState<Student | null>(null);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [formData, setFormData] = useState<FormState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadStudentData = async () => {
-      if (!params.id) {
-        setError("ID de estudiante no válido");
-        setIsLoading(false);
-        return;
-      }
-
+  const loadData = async () => {
+    try {
       setIsLoading(true);
       setError(null);
-      
-      try {
-        const studentData = await getStudentById(params.id as string);
-        
-        // Mapear los datos del backend al formato del frontend
-        const mappedStudent: StudentWithFrontendData = {
-          ...studentData,
-          nivelRiesgo: studentData.riesgoDesercion > 0.7 ? "ALTO" : 
-                      studentData.riesgoDesercion > 0.4 ? "MEDIO" : "BAJO",
-          intervencionesActivas: 0,
-          historialAlertas: [],
-          intervenciones: [],
-          notas: [],
-          direccion: studentData.contexto?.situacionesEspeciales || "",
-          telefono: studentData.usuario.telefono || "",
-          acudiente: "",
-          telefonoAcudiente: "",
-        };
-        
-        setStudent(mappedStudent);
-      } catch (err: unknown) {
-        console.error('Error loading student:', err);
-        const errorMessage = err instanceof Error ? err.message : 'No se pudo cargar la información del estudiante';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    loadStudentData();
-  }, [params.id]);
+      const [studentData, institutionData] = await Promise.all([
+        getStudentById(studentId),
+        getInstitutions(),
+      ]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    if (!student) return;
-    
-    const { name, value } = e.target;
-    
-    // Manejar campos anidados
-    if (name.startsWith('usuario.')) {
-      const field = name.split('.')[1];
-      setStudent({
-        ...student,
-        usuario: {
-          ...student.usuario,
-          [field]: value
-        }
+      setStudent(studentData);
+      setInstitutions(institutionData || []);
+      setFormData({
+        nombre: studentData.usuario.nombre || "",
+        apellido: studentData.usuario.apellido || "",
+        email: studentData.usuario.email || "",
+        telefono: studentData.usuario.telefono || "",
+        edad: String(studentData.edad ?? ""),
+        genero: studentData.genero || "",
+        etnia: studentData.etnia || "NINGUNA",
+        grado: studentData.grado || "",
+        institucionId: studentData.institucionId || "",
       });
-    } else if (name.startsWith('contexto.')) {
-      const field = name.split('.')[1];
-      setStudent({
-        ...student,
-        contexto: {
-          ...student.contexto,
-          [field]: field === 'distanciaEscuela' || field === 'tiempoDesplazamiento' || field === 'personasHogar' 
-            ? Number(value) 
-            : field === 'trabaja' || field === 'apoyoFamiliar' || field === 'accesoInternet' || 
-              field === 'dispositivoElectronico' || field === 'participacionComunitaria' || 
-              field === 'conocimientosAncestrales'
-            ? value === 'true'
-            : value
-        } as ContextoEstudiante
-      });
-    } else {
-      // Campos directos del estudiante
-      setStudent({
-        ...student,
-        [name]: name === 'edad' || name === 'riesgoDesercion' ? Number(value) : value
-      });
+    } catch (err) {
+      console.error("Error cargando estudiante:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible cargar la información del estudiante."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!student) return;
+  useEffect(() => {
+    if (studentId) {
+      loadData();
+    }
+  }, [studentId]);
 
-    setIsSaving(true);
-    setError(null);
+  const risk = useMemo(() => {
+    if (!student) return riskMeta.BAJO;
+    return riskMeta[getRiskLevel(student.riesgoDesercion)];
+  }, [student]);
+
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = event.target;
+    setFormData((current) =>
+      current
+        ? {
+            ...current,
+            [name]: value,
+          }
+        : current
+    );
+    if (error) setError(null);
+    if (success) setSuccess(null);
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!student || !formData) return;
+
+    const age = Number.parseInt(formData.edad, 10);
+
+    if (!Number.isFinite(age) || age < 5 || age > 30) {
+      setError("La edad debe estar entre 5 y 30 años.");
+      return;
+    }
+
+    if (!formData.institucionId) {
+      setError("Selecciona una institución educativa.");
+      return;
+    }
+
+    const payload: UpdateStudentData = {
+      edad: age,
+      genero: formData.genero,
+      etnia: formData.etnia,
+      grado: formData.grado.trim(),
+      institucionId: formData.institucionId,
+      riesgoDesercion: student.riesgoDesercion,
+      usuario: {
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        email: formData.email.trim(),
+        telefono: formData.telefono.trim() || undefined,
+      },
+    };
 
     try {
-      // Preparar los datos en el formato correcto para el backend
-      const studentToUpdate: UpdateStudentData = {
-        edad: student.edad,
-        genero: student.genero,
-        etnia: student.etnia,
-        grado: student.grado || "",
-        institucionId: student.institucionId,
-        riesgoDesercion: student.riesgoDesercion,
-        usuario: {
-          nombre: student.usuario.nombre,
-          apellido: student.usuario.apellido,
-          email: student.usuario.email,
-          telefono: student.usuario.telefono || "",
-        }
-      };
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
 
-      console.log('Enviando datos al backend:', studentToUpdate); // Para debugging
-      
-      await updateStudent(student.id, studentToUpdate);
-      
-      // Redirigir a la página de detalles después de guardar
-      router.push(`/core/students/${student.id}`);
-      router.refresh();
-      
-    } catch (err: unknown) {
-      console.error('Error updating student:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error al guardar los cambios. Por favor, intenta nuevamente.';
-      setError(errorMessage);
+      await updateStudent(student.id, payload);
+
+      setSuccess("Los cambios del estudiante se guardaron correctamente.");
+
+      window.setTimeout(() => {
+        router.push(`/core/students/${student.id}`);
+        router.refresh();
+      }, 900);
+    } catch (err) {
+      console.error("Error actualizando estudiante:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No fue posible guardar los cambios."
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push(`/core/students/${student?.id}`);
-  };
-
-  const getRiskColor = (nivelRiesgo?: string) => {
-    switch (nivelRiesgo) {
-      case "CRITICO": return "bg-red-600";
-      case "ALTO": return "bg-orange-500";
-      case "MEDIO": return "bg-yellow-500";
-      case "BAJO": return "bg-green-500";
-      default: return "bg-gray-500";
-    }
-  };
-
-  // Estados de carga
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#F8F0AF] mx-auto mb-4"></div>
-            <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-              <div className="w-8 h-8 bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] rounded-full animate-ping"></div>
-            </div>
-          </div>
-          <p className="mt-4 text-lg animate-pulse">Cargando información del estudiante...</p>
-          <div className="mt-6 h-2 w-48 bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] rounded-full mx-auto animate-rainbow"></div>
-        </div>
-      </div>
+      <CorePage>
+        <LoadingState label="Cargando datos para edición..." />
+      </CorePage>
     );
   }
 
-  // Estado de error
-  if (error && !student) {
+  if (!student || !formData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-6 font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent">
-            Error
-          </div>
-          <p className="text-xl mb-6 text-red-300">{error}</p>
-          <div className="flex space-x-4 justify-center">
-            <button 
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transform transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reintentar
-            </button>
-            <Link 
-              href="/core/students"
-              className="inline-flex items-center px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all transform hover:scale-105 border border-white/10"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Volver al listado
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!student) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-6 font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent animate-pulse">
-            Estudiante no encontrado
-          </div>
-          <Link 
-            href="/core/students"
-            className="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transform transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#F8F0AF]/30"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Volver al listado
-          </Link>
-        </div>
-      </div>
+      <CorePage>
+        <ErrorState
+          title="No fue posible editar el estudiante"
+          message={error || "El estudiante no existe o no está disponible."}
+          onRetry={loadData}
+        />
+      </CorePage>
     );
   }
 
   return (
-    <div className="pt-24 min-h-screen bg-gradient-to-br from-[#00161a] via-[#00232a] to-[#00303a] text-white p-6">
-      {/* Efecto de partículas sutiles en el fondo */}
-      <div className="fixed inset-0 z-0">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full animate-float"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 10 + 2}px`,
-              height: `${Math.random() * 10 + 2}px`,
-              background: `rgba(${i % 3 === 0 ? '248, 240, 175' : i % 3 === 1 ? '172, 74, 0' : '255, 255, 255'}, ${Math.random() * 0.3 + 0.1})`,
-              animationDuration: `${Math.random() * 10 + 10}s`,
-              animationDelay: `${Math.random() * 5}s`
-            }}
-          ></div>
-        ))}
-      </div>
+    <CorePage>
+      <CorePageHeader
+        eyebrow="Edición de trayectoria"
+        title="Editar estudiante"
+        description="Actualiza datos de identidad y trayectoria que el backend permite modificar. El contexto y el riesgo se muestran como referencia cuando no existe un contrato de actualización específico."
+        actions={
+          <Link
+            href={`/core/students/${student.id}`}
+            className="inline-flex min-h-11 items-center gap-3 border border-[#002930]/16 px-4 text-sm font-medium transition hover:border-[#002930]/45"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver al detalle
+          </Link>
+        }
+      />
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        {/* Header con navegación */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link 
-              href={`/core/students/${student.id}`}
-              className="inline-flex items-center p-3 rounded-xl bg-[#00232a]/60 hover:bg-[#00232a] border border-white/10 text-[#F8F0AF] hover:text-white transition-all transform hover:translate-x-1 backdrop-blur-sm"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </Link>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#F8F0AF] to-[#AC4A00] bg-clip-text text-transparent animate-gradient">
-                Editar: {student.usuario.nombre} {student.usuario.apellido}
-              </h1>
-              <p className="text-white/70 mt-1 flex items-center">
-                <span className="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
-                Modifica la información del estudiante
-              </p>
-            </div>
-          </div>
-          <div className="flex space-x-3 mt-4 md:mt-0">
-            <button
-              onClick={handleCancel}
-              className="inline-flex items-center px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-white/10 backdrop-blur-sm border border-white/10"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSaving}
-              className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#F8F0AF]/30 disabled:opacity-50 disabled:transform-none"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#002930] mr-2"></div>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Guardar cambios
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mensaje de error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/50 text-red-200 backdrop-blur-sm">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Tarjeta de perfil */}
-            <div className="lg:col-span-2 bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 overflow-hidden transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <div className="flex flex-col md:flex-row items-center md:items-start">
-                <div 
-                  className="relative w-24 h-24 rounded-full bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] flex items-center justify-center mr-6 transform transition-all hover:scale-105 hover:rotate-3 mb-4 md:mb-0"
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                >
-                  <span className="font-bold text-3xl text-[#002930]">
-                    {student.usuario.nombre.charAt(0)}{student.usuario.apellido.charAt(0)}
-                  </span>
-                  {isHovered && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full backdrop-blur-sm">
-                      <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-2xl font-bold mb-4 text-[#F8F0AF]">
-                    Información Básica
-                  </h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white/70 mb-2">
-                        Nombre *
-                      </label>
-                      <input
-                        type="text"
-                        name="usuario.nombre"
-                        value={student.usuario.nombre}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/70 mb-2">
-                        Apellido *
-                      </label>
-                      <input
-                        type="text"
-                        name="usuario.apellido"
-                        value={student.usuario.apellido}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/70 mb-2">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        name="usuario.email"
-                        value={student.usuario.email}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/70 mb-2">
-                        Edad *
-                      </label>
-                      <input
-                        type="number"
-                        name="edad"
-                        value={student.edad}
-                        onChange={handleInputChange}
-                        min="5"
-                        max="25"
-                        className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_300px]">
+        <Panel className="overflow-hidden">
+          <form onSubmit={handleSubmit}>
+            {(error || success) && (
+              <div className="border-b border-[#002930]/12 p-5">
+                {error && (
+                  <InlineNotice tone="error" title="No se pudieron guardar los cambios">
+                    {error}
+                  </InlineNotice>
+                )}
+                {success && (
+                  <InlineNotice tone="success" title="Cambios guardados">
+                    {success}
+                  </InlineNotice>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Indicador de riesgo (solo lectura) */}
-            <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 overflow-hidden transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Indicadores de Riesgo
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span>Probabilidad de deserción</span>
-                    <span className="font-bold">{(student.riesgoDesercion * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                    <div 
-                      className={`h-2.5 rounded-full ${getRiskColor(student.nivelRiesgo)}`} 
-                      style={{ width: `${student.riesgoDesercion * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-[#001a20] p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-white/60">Nivel de riesgo</div>
-                    <div className="font-medium">{student.nivelRiesgo || "NO DISPONIBLE"}</div>
-                  </div>
-                  <div className="bg-[#001a20] p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-white/60">Intervenciones activas</div>
-                    <div className="font-medium">{student.intervencionesActivas || 0}</div>
-                  </div>
-                </div>
-                <div className="text-xs text-white/40 mt-4">
-                  * Los indicadores de riesgo son calculados automáticamente por el sistema
-                </div>
+            <FormSection
+              index="01"
+              title="Identidad y contacto"
+              description="Datos de cuenta visibles en la trayectoria del estudiante."
+            >
+              <div className="grid gap-5 md:grid-cols-2">
+                <FormField
+                  label="Nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
+                />
+                <FormField
+                  label="Apellido"
+                  name="apellido"
+                  value={formData.apellido}
+                  onChange={handleChange}
+                  required
+                />
+                <FormField
+                  label="Correo electrónico"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+                <FormField
+                  label="Teléfono"
+                  name="telefono"
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  placeholder="Opcional"
+                />
               </div>
-            </div>
-          </div>
+            </FormSection>
 
-          {/* Información académica y personal */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Información académica */}
-            <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l-9 5m9-5v6" />
-                </svg>
-                Información Académica
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Institución Educativa
-                  </label>
-                  <input
-                    type="text"
-                    value={student.institucion.nombre}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    readOnly
-                  />
-                  <input
-                    type="hidden"
-                    name="institucionId"
-                    value={student.institucionId}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white/70 mb-2">
-                      Grado *
-                    </label>
-                    <select
-                      name="grado"
-                      value={student.grado || ""}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                      required
-                    >
-                      <option value="">Seleccionar grado</option>
-                      <option value="6°">6° Grado</option>
-                      <option value="7°">7° Grado</option>
-                      <option value="8°">8° Grado</option>
-                      <option value="9°">9° Grado</option>
-                      <option value="10°">10° Grado</option>
-                      <option value="11°">11° Grado</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-white/70 mb-2">
-                      Género *
-                    </label>
-                    <select
-                      name="genero"
-                      value={student.genero}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                      required
-                    >
-                      <option value="FEMENINO">Femenino</option>
-                      <option value="MASCULINO">Masculino</option>
-                      <option value="OTRO">Otro</option>
-                      <option value="PREFIERO_NO_DECIR">Prefiero no decir</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <FormSection
+              index="02"
+              title="Trayectoria educativa"
+              description="Información que ubica al estudiante dentro de su proceso académico."
+            >
+              <div className="grid gap-5 md:grid-cols-2">
+                <FormField
+                  label="Edad"
+                  name="edad"
+                  type="number"
+                  value={formData.edad}
+                  onChange={handleChange}
+                  required
+                  min={5}
+                  max={30}
+                />
 
-            {/* Información personal */}
-            <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10">
-              <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Información Personal
-              </h3>
-              
-              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Etnia *
-                  </label>
+                  <FieldLabel htmlFor="grado">Grado *</FieldLabel>
                   <select
-                    name="etnia"
-                    value={student.etnia}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
+                    id="grado"
+                    name="grado"
+                    value={formData.grado}
+                    onChange={handleChange}
                     required
+                    className={inputClass}
                   >
-                    <option value="AFRODESCENDIENTE">Afrodescendiente</option>
-                    <option value="INDIGENA">Indígena</option>
-                    <option value="MESTIZO">Mestizo</option>
+                    <option value="">Seleccionar grado</option>
+                    {["6°", "7°", "8°", "9°", "10°", "11°"].map((grade) => (
+                      <option key={grade} value={grade}>
+                        {grade}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <FieldLabel htmlFor="genero">Género *</FieldLabel>
+                  <select
+                    id="genero"
+                    name="genero"
+                    value={formData.genero}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="FEMENINO">Femenino</option>
+                    <option value="MASCULINO">Masculino</option>
+                    <option value="NO_BINARIO">No binario</option>
                     <option value="OTRO">Otro</option>
                     <option value="PREFIERO_NO_DECIR">Prefiero no decir</option>
                   </select>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-white/70 mb-2">
-                    Dirección
-                  </label>
-                  <input
-                    type="text"
-                    name="contexto.situacionesEspeciales"
-                    value={student.contexto?.situacionesEspeciales || ""}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                    placeholder="Dirección del estudiante"
-                  />
+                  <FieldLabel htmlFor="etnia">
+                    Autorreconocimiento étnico *
+                  </FieldLabel>
+                  <select
+                    id="etnia"
+                    name="etnia"
+                    value={formData.etnia}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
+                  >
+                    {ethnicityOptions.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-[#002930]/42">
+                    Se conserva como variable contextual y de auditoría de equidad,
+                    no como causa automática de riesgo.
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <FieldLabel htmlFor="institucionId">
+                    Institución educativa *
+                  </FieldLabel>
+                  <select
+                    id="institucionId"
+                    name="institucionId"
+                    value={formData.institucionId}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
+                  >
+                    <option value="">Seleccionar institución</option>
+                    {institutions.map((institution) => (
+                      <option key={institution.id} value={institution.id}>
+                        {institution.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
-          </div>
+            </FormSection>
 
-          {/* Información de contacto */}
-          <div className="bg-[#00232a]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-6 transform transition-all hover:shadow-2xl hover:shadow-[#F8F0AF]/10 mb-8">
-            <h3 className="font-medium mb-4 text-[#F8F0AF] flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              Información de Contacto
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-2">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  name="usuario.telefono"
-                  value={student.usuario.telefono || ""}
-                  onChange={handleInputChange}
-                  className="w-full bg-[#001a20] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#F8F0AF] focus:border-transparent transition-all"
-                  placeholder="Número de teléfono"
+            <FormSection
+              index="03"
+              title="Datos no editables desde este formulario"
+              description="Información visible para referencia pero sin endpoint de actualización incluido en el contrato actual."
+            >
+              <div className="grid gap-px border border-[#002930]/12 bg-[#002930]/12 sm:grid-cols-2">
+                <ReadOnlyCard
+                  label="Riesgo registrado"
+                  value={
+                    <div className={"border-l-2 pl-3 " + risk.border}>
+                      <div className="flex items-baseline gap-3">
+                        <span className={"font-medium " + risk.text}>
+                          {risk.label}
+                        </span>
+                        <span className="text-xs text-[#002930]/45">
+                          {(student.riesgoDesercion * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="mt-2 h-px bg-[#002930]/12">
+                        <div
+                          className={"h-px " + risk.bar}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(0, student.riesgoDesercion * 100)
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  }
+                />
+
+                <ReadOnlyCard
+                  label="Contexto"
+                  value={
+                    student.contexto
+                      ? "Disponible en la trayectoria"
+                      : "No registrado"
+                  }
                 />
               </div>
+
+              <div className="mt-5">
+                <InlineNotice tone="info" title="Contrato actual del backend">
+                  El DTO de actualización de estudiante permite modificar identidad,
+                  edad, género, etnia, grado e institución. Por eso este formulario
+                  no aparenta guardar cambios de contexto que el backend no persiste.
+                </InlineNotice>
+              </div>
+            </FormSection>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-[#002930]/14 px-5 py-5 sm:flex-row sm:items-center sm:justify-end">
+              <Link
+                href={`/core/students/${student.id}`}
+                className="inline-flex min-h-11 items-center justify-center border border-[#002930]/16 px-5 text-sm font-medium transition hover:border-[#002930]/45"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex min-h-11 items-center justify-center gap-3 bg-[#AC4A00] px-5 text-sm font-medium text-white transition hover:bg-[#D45A10] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {isSaving ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Guardar cambios
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </Panel>
+
+        <aside className="space-y-4 xl:sticky xl:top-[100px] xl:self-start">
+          <div className="border border-[#002930]/14 bg-[#002930] p-5 text-white">
+            <p className="text-[9px] uppercase tracking-[0.18em] text-[#F8F0AF]">
+              Estudiante
+            </p>
+            <h2 className="mt-3 text-xl font-medium tracking-[-0.03em]">
+              {student.usuario.nombre} {student.usuario.apellido}
+            </h2>
+            <p className="mt-2 text-xs leading-5 text-white/45">
+              {student.institucion?.nombre || "Sin institución"}
+            </p>
+
+            <div className="mt-6 space-y-4 border-t border-white/10 pt-5">
+              <SideRow label="ID" value={student.id} mono />
+              <SideRow
+                label="Estado"
+                value={student.activo ? "Activo" : "Inactivo"}
+              />
+              <SideRow label="Registro" value={student.creadoEn.slice(0, 10)} />
             </div>
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex justify-end space-x-4 pb-8">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-white/10 backdrop-blur-sm border border-white/10"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#AC4A00] to-[#F8F0AF] text-[#002930] font-medium transition-all transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#F8F0AF]/30 disabled:opacity-50 disabled:transform-none flex items-center"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#002930] mr-2"></div>
-                  Guardando cambios...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Guardar cambios
-                </>
-              )}
-            </button>
+          <div className="flex items-start gap-3 border-l-2 border-[#AC4A00] bg-[#F8F0AF] px-4 py-4">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#AC4A00]" />
+            <p className="text-xs leading-5 text-[#002930]/50">
+              Verifica que los cambios correspondan a información confirmada y
+              necesaria para el seguimiento educativo.
+            </p>
           </div>
-        </form>
-      </div>
 
-      {/* Estilos para animaciones personalizadas */}
-      <style jsx>{`
-        @keyframes float {
-          0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.7;
-          }
-          50% {
-            transform: translateY(-10px) rotate(5deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.7;
-          }
+          <div className="border border-[#002930]/14 bg-[#F8F0AF] p-5">
+            <p className="text-[9px] uppercase tracking-[0.17em] text-[#AC4A00]">
+              Antes de guardar
+            </p>
+            <div className="mt-5 space-y-4">
+              {[
+                "Revisa nombre, correo y grado.",
+                "Confirma la institución educativa.",
+                "No modifiques datos para alterar artificialmente la lectura de riesgo.",
+              ].map((item) => (
+                <div key={item} className="flex gap-3">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#AC4A00]" />
+                  <p className="text-xs leading-5 text-[#002930]/52">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+    </CorePage>
+  );
+}
+
+function FormField({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  min,
+  max,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  value: string;
+  onChange: (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
+  placeholder?: string;
+  required?: boolean;
+  min?: number;
+  max?: number;
+}) {
+  return (
+    <div>
+      <FieldLabel htmlFor={name}>
+        {label}
+        {required ? " *" : ""}
+      </FieldLabel>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        min={min}
+        max={max}
+        className={inputClass}
+      />
+    </div>
+  );
+}
+
+function ReadOnlyCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="bg-[#F8F0AF] p-4">
+      <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
+        {label}
+      </p>
+      <div className="mt-3 text-sm leading-6 text-[#002930]">{value}</div>
+    </div>
+  );
+}
+
+function SideRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[4rem_1fr] gap-3 text-xs">
+      <span className="text-white/30">{label}</span>
+      <span
+        className={
+          "break-all text-right text-white/65 " + (mono ? "font-mono text-[10px]" : "")
         }
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes rainbow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .animate-float {
-          animation: float 5s ease-in-out infinite;
-        }
-        .animate-gradient {
-          background-size: 200% auto;
-          animation: gradient 3s linear infinite;
-        }
-        .animate-rainbow {
-          background: linear-gradient(90deg, #AC4A00, #F8F0AF, #AC4A00);
-          background-size: 200% auto;
-          animation: rainbow 2s linear infinite;
-        }
-      `}</style>
+      >
+        {value}
+      </span>
     </div>
   );
 }
