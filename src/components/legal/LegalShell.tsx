@@ -11,7 +11,7 @@ export type LegalSection = {
 
 type LegalShellProps = {
   eyebrow: string;
-  title: string;
+  title: ReactNode;
   description: string;
   statusLabel: string;
   notice?: ReactNode;
