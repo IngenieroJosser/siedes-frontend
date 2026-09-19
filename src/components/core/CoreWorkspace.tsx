@@ -5,16 +5,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   ArrowUpRight,
-  BarChart3,
-  BookOpenCheck,
   BrainCircuit,
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
-  Users,
   X,
 } from "lucide-react";
 
@@ -22,55 +17,20 @@ const NAV_ITEMS = [
   {
     href: "/core",
     label: "Resumen",
-    description: "Vista general",
+    description: "Panorama institucional",
     icon: LayoutDashboard,
   },
   {
-    href: "/core/students",
-    label: "Estudiantes",
-    description: "Trayectorias y riesgo",
-    icon: Users,
-  },
-  {
-    href: "/core/alerts",
-    label: "Alertas",
-    description: "Señales priorizadas",
-    icon: AlertTriangle,
-  },
-  {
-    href: "/core/interventions",
-    label: "Intervenciones",
-    description: "Acompañamiento",
-    icon: BookOpenCheck,
-  },
-  {
     href: "/core/ai",
-    label: "Riesgo institucional",
-    description: "Modelo y trazabilidad",
+    label: "Riesgos institucionales",
+    description: "Modelo, prioridad y trazabilidad",
     icon: BrainCircuit,
-  },
-  {
-    href: "/core/reports",
-    label: "Reportes",
-    description: "Lectura operativa",
-    icon: BarChart3,
-  },
-  {
-    href: "/core/settings",
-    label: "Configuración",
-    description: "Sistema y gobernanza",
-    icon: Settings,
   },
 ];
 
 const SECTION_META: Record<string, { eyebrow: string; title: string }> = {
-  "/core": { eyebrow: "Centro operativo", title: "Resumen" },
-  "/core/students": { eyebrow: "Trayectorias", title: "Estudiantes" },
-  "/core/alerts": { eyebrow: "Señales", title: "Alertas tempranas" },
-  "/core/interventions": { eyebrow: "Acompañamiento", title: "Intervenciones" },
-  "/core/ai": { eyebrow: "Inteligencia artificial", title: "Riesgo institucional" },
-  "/core/reports": { eyebrow: "Análisis", title: "Reportes" },
-  "/core/settings": { eyebrow: "Gobernanza", title: "Configuración" },
+  "/core": { eyebrow: "Panorama institucional", title: "Resumen" },
+  "/core/ai": { eyebrow: "Inteligencia artificial", title: "Riesgos institucionales" },
 };
 
 function getSection(pathname: string) {
@@ -144,8 +104,8 @@ export default function CoreWorkspace({ children }: { children: React.ReactNode 
             Operación
           </p>
           <p className="mt-3 text-xs leading-5 text-white/38">
-            Seguimiento de trayectorias, alertas e intervenciones para apoyar la
-            permanencia escolar.
+            Lectura ejecutiva del riesgo de deserción por institución educativa,
+            con priorización, trazabilidad y revisión humana.
           </p>
         </div>
 
