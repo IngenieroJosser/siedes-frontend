@@ -12,7 +12,10 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   try {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      "http://localhost:3001";
 
     // Normalizar URLs
     const normalizedBase = baseUrl.replace(/\/+$/, "");
@@ -110,8 +113,13 @@ export const apiRequest = async <T>(
           throw new Error("No tienes permisos para realizar esta acción.");
         } else if (status === 404) {
           throw new Error("Recurso no encontrado.");
+        } else if (status === 503) {
+          throw new Error(
+            responseData?.message ||
+              "SIEDES AI no está disponible o todavía no está listo. Verifica el servicio de IA y su configuración."
+          );
         } else if (status >= 500) {
-          throw new Error("Error interno del servidor. Por favor, intenta más tarde.");
+          throw new Error(responseData?.message || "Error interno del servidor. Por favor, intenta más tarde.");
         } else {
           throw new Error(responseData?.message || `Error ${status}: ${error.response.statusText}`);
         }

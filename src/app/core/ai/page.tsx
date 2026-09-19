@@ -6,171 +6,138 @@ import {
   Activity,
   ArrowRight,
   BrainCircuit,
-  Database,
-  GitCompareArrows,
-  GraduationCap,
+  Building2,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import {
   CorePage,
   CorePageHeader,
+  ErrorState,
   InlineNotice,
   LoadingState,
   Panel,
   StatCard,
   StatGrid,
 } from "@/components/core/CoreUI";
-import { getStudents } from "@/services/students";
-import { getAiHealth, getAiModel } from "@/services/predictions";
-import { Student } from "@/lib/type";
-import { AiHealthResponse, AiModelMetadata } from "@/lib/prediction-types";
+import {
+  getAiDashboard,
+  getAiHealth,
+  getAiModel,
+  getInstitutionRisks,
+  getRetrainingStatus,
+} from "@/services/predictions";
+import {
+  AiDashboardSummary,
+  AiHealthResponse,
+  AiInstitutionRisk,
+  AiModelMetadata,
+  RetrainingStatus,
+} from "@/lib/prediction-types";
 
-const riskOrder = ["CRITICO", "ALTO", "MEDIO", "BAJO"] as const;
-const riskLabels: Record<(typeof riskOrder)[number], string> = {
-  CRITICO: "Crítico",
-  ALTO: "Alto",
-  MEDIO: "Medio",
-  BAJO: "Bajo",
-};
+const riskMeta = {
+  ALTO: { label: "Alto", text: "text-[#8f2f20]", border: "border-[#8f2f20]/25" },
+  MEDIO: { label: "Medio", text: "text-[#8b6d14]", border: "border-[#8b6d14]/25" },
+  BAJO: { label: "Bajo", text: "text-[#2f6a5f]", border: "border-[#2f6a5f]/25" },
+} as const;
 
-function riskLevel(value: number): (typeof riskOrder)[number] {
-  if (value >= 0.8) return "CRITICO";
-  if (value >= 0.6) return "ALTO";
-  if (value >= 0.4) return "MEDIO";
-  return "BAJO";
+function pct(value?: number) {
+  if (typeof value !== "number" || Number.isNaN(value)) return "—";
+  return `${(value * 100).toFixed(1)}%`;
 }
 
-function firstString(
-  source: AiModelMetadata | null,
-  keys: string[]
-): string | null {
-  if (!source) return null;
-  for (const key of keys) {
-    const value = source[key];
-    if (typeof value === "string" && value.trim()) return value;
-    if (typeof value === "number") return String(value);
-  }
-  return null;
+function modelName(model: AiModelMetadata | null) {
+  if (!model) return "No informado";
+  return String(model.algorithm || model.model_name || model.model_type || "No informado");
 }
 
-function getFeatureCount(model: AiModelMetadata | null): number | null {
-  if (!model) return null;
-  const candidates = [model.features, model.feature_names];
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) return candidate.length;
-  }
-  const raw = model.feature_count;
-  return typeof raw === "number" ? raw : null;
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) return "No informado";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("es-CO", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-export default function AiOperationsPage() {
-  const [students, setStudents] = useState<Student[]>([]);
+export default function InstitutionalAiPage() {
   const [health, setHealth] = useState<AiHealthResponse | null>(null);
   const [model, setModel] = useState<AiModelMetadata | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [aiAvailable, setAiAvailable] = useState(false);
-  const [studentsAvailable, setStudentsAvailable] = useState(true);
+  const [summary, setSummary] = useState<AiDashboardSummary | null>(null);
+  const [institutions, setInstitutions] = useState<AiInstitutionRisk[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [riskFilter, setRiskFilter] = useState<"TODOS" | "BAJO" | "MEDIO" | "ALTO">("TODOS");
+  const [retraining, setRetraining] = useState<RetrainingStatus | null>(null);
 
   const load = async () => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
+    try {
+      // Primero verificamos disponibilidad/readiness. Si la IA está levantada pero
+      // aún no tiene modelo/predicciones, evitamos disparar múltiples 503 en paralelo.
+      const healthData = await getAiHealth();
+      setHealth(healthData);
 
-    const [healthResult, modelResult, studentsResult] =
-      await Promise.allSettled([getAiHealth(), getAiModel(), getStudents()]);
+      if (!healthData.ready) {
+        setModel(null);
+        setSummary(null);
+        setInstitutions([]);
+        setError(
+          healthData.model_ready === false || healthData.predictions_ready === false
+            ? "SIEDES AI está disponible, pero aún no está listo: faltan el modelo productivo o las predicciones institucionales. Ejecuta el pipeline de IA y vuelve a intentar."
+            : "SIEDES AI todavía no está listo. Verifica /ready en el microservicio de IA."
+        );
+        return;
+      }
 
-    if (healthResult.status === "fulfilled") {
-      setHealth(healthResult.value);
-      setAiAvailable(true);
-    } else {
-      setHealth(null);
-      setAiAvailable(false);
+      const [modelData, summaryData, institutionData, retrainingData] = await Promise.all([
+        getAiModel(),
+        getAiDashboard(),
+        getInstitutionRisks(),
+        getRetrainingStatus().catch(() => null),
+      ]);
+      setModel(modelData);
+      setSummary(summaryData);
+      setInstitutions(institutionData);
+      setRetraining(retrainingData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible consultar SIEDES AI.");
+    } finally {
+      setLoading(false);
     }
-
-    if (modelResult.status === "fulfilled") {
-      setModel(modelResult.value);
-    } else {
-      setModel(null);
-    }
-
-    if (studentsResult.status === "fulfilled") {
-      setStudents(studentsResult.value || []);
-      setStudentsAvailable(true);
-    } else {
-      setStudents([]);
-      setStudentsAvailable(false);
-    }
-
-    if (
-      healthResult.status === "rejected" &&
-      modelResult.status === "rejected"
-    ) {
-      setError(
-        "El backend respondió, pero no fue posible consultar el servicio predictivo o el modelo desplegado."
-      );
-    }
-
-    setIsLoading(false);
   };
 
   useEffect(() => {
     load();
   }, []);
 
-  const distribution = useMemo(
-    () =>
-      riskOrder.map((level) => {
-        const count = students.filter(
-          (student) => riskLevel(student.riesgoDesercion) === level
-        ).length;
-        return {
-          level,
-          count,
-          percent: students.length ? (count / students.length) * 100 : 0,
-        };
-      }),
-    [students]
-  );
+  const filtered = useMemo(() => {
+    if (riskFilter === "TODOS") return institutions;
+    return institutions.filter((item) => item.riesgo_predicho === riskFilter);
+  }, [institutions, riskFilter]);
 
-  const highRisk = students.filter(
-    (student) => student.riesgoDesercion >= 0.6
-  ).length;
-
-  const modelVersion =
-    firstString(model, ["model_version", "version"]) || "No informado";
-  const modelType =
-    firstString(model, ["model_type", "model_name", "algorithm"]) ||
-    "No informado";
-  const task = firstString(model, ["task", "target", "objective"]);
-  const trainedAt = firstString(model, ["trained_at", "created_at"]);
-  const featureCount = getFeatureCount(model);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <CorePage>
-        <LoadingState label="Consultando SIEDES AI..." />
+        <LoadingState label="Consultando riesgo institucional..." />
       </CorePage>
     );
   }
 
+  if (error) {
+    return (
+      <CorePage>
+        <ErrorState
+          title="No fue posible consultar el modelo institucional"
+          message={error}
+          onRetry={load}
+        />
+      </CorePage>
+    );
+  }
+
+  const highCount = summary?.riesgo.ALTO ?? 0;
+  const modelVersion = String(model?.model_version || model?.version || "No informado");
+  const gates = model?.enterprise_gates || {};
+
   return (
     <CorePage>
       <CorePageHeader
-        eyebrow="Inteligencia artificial"
-        title="IA predictiva"
-        description="Estado operativo del servicio de IA, versión del modelo desplegado y lectura responsable de las señales de riesgo registradas. El frontend nunca se comunica directamente con FastAPI: toda la integración pasa por el backend SIEDES."
+        eyebrow="Modelo predictivo institucional"
+        title="Riesgo de deserción por colegio"
+        description="SIEDES prioriza instituciones educativas de Quibdó mediante un modelo de machine learning entrenado sobre variables históricas, académicas, socioeconómicas, territoriales, culturales e institucionales. El piloto no emite predicciones individuales de estudiantes."
         actions={
           <button
             type="button"
@@ -178,234 +145,183 @@ export default function AiOperationsPage() {
             className="inline-flex min-h-11 items-center gap-3 border border-[#002930]/16 px-4 text-sm font-medium transition hover:border-[#002930]/45"
           >
             <RefreshCw className="h-4 w-4" />
-            Actualizar estado
+            Actualizar
           </button>
         }
       />
 
-      {error && (
-        <div className="mt-6">
-          <InlineNotice tone="warning" title="Servicio de IA no disponible">
-            {error} Las demás funciones operativas de SIEDES pueden continuar
-            funcionando; las nuevas inferencias quedan temporalmente pendientes.
-          </InlineNotice>
-        </div>
-      )}
+      <div className="mt-6">
+        <InlineNotice tone="warning" title="Alcance del piloto">
+          Los datos actuales son sintéticos y sirven para validar el flujo técnico y metodológico. No deben interpretarse como evidencia real sobre una institución ni utilizarse para decisiones automáticas. La revisión humana es obligatoria.
+        </InlineNotice>
+      </div>
 
       <StatGrid>
         <StatCard
-          label="Servicio IA"
-          value={aiAvailable ? "Disponible" : "No disponible"}
-          note={
-            aiAvailable
-              ? String(health?.status || "Respuesta correcta del servicio")
-              : "Requiere revisar backend y FastAPI"
-          }
-          accent={aiAvailable ? "neutral" : "danger"}
+          label="Servicio de IA"
+          value={health?.ready ? "Listo" : "No listo"}
+          note={`FastAPI ${String(health?.version || "")}`.trim()}
+          accent={health?.ready ? "neutral" : "danger"}
         />
         <StatCard
-          label="Modelo activo"
-          value={modelVersion}
-          note={modelType}
+          label="Instituciones evaluadas"
+          value={summary?.instituciones ?? institutions.length}
+          note={`Corte ${summary?.anio ?? "—"}`}
+        />
+        <StatCard
+          label="Riesgo alto"
+          value={highCount}
+          note="Instituciones priorizadas por el modelo"
           accent="orange"
         />
         <StatCard
-          label="Estudiantes"
-          value={studentsAvailable ? students.length : "—"}
-          note="Trayectorias con riesgo almacenado"
-        />
-        <StatCard
-          label="Riesgo alto o crítico"
-          value={studentsAvailable ? highRisk : "—"}
-          note="Señales actuales, no deserciones observadas"
-          accent="orange"
+          label="Probabilidad ALTO media"
+          value={pct(summary?.prob_alto_media)}
+          note="Promedio del último corte"
         />
       </StatGrid>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_.95fr]">
-        <Panel eyebrow="Modelo" title="Modelo desplegado">
-          <div className="grid gap-px bg-[#002930]/12 sm:grid-cols-2">
-            <MetaItem label="Versión" value={modelVersion} />
-            <MetaItem label="Tipo / algoritmo" value={modelType} />
-            <MetaItem label="Tarea" value={task || "No informada por metadata"} />
-            <MetaItem
-              label="Variables de entrada"
-              value={featureCount === null ? "No informado" : String(featureCount)}
-            />
-            <MetaItem
-              label="Entrenamiento / registro"
-              value={formatDateTime(trainedAt)}
-              className="sm:col-span-2"
-            />
+      <Panel className="mt-6" eyebrow="MLOps" title="Aprendizaje continuo gobernado">
+        <div className="grid gap-px bg-[#002930]/10 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="bg-[#F8F0AF] p-5">
+            <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/40">Estado</p>
+            <p className="mt-2 text-lg font-medium">{retraining?.continual_learning_enabled ? "Activo" : "No disponible"}</p>
           </div>
-
-          {model?.metrics && Object.keys(model.metrics).length > 0 && (
-            <div className="border-t border-[#002930]/12 p-5">
-              <p className="text-[9px] uppercase tracking-[0.17em] text-[#AC4A00]">
-                Métricas informadas por el modelo
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(model.metrics).map(([key, value]) => (
-                  <div key={key} className="border border-[#002930]/12 p-3">
-                    <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/36">
-                      {key.replaceAll("_", " ")}
-                    </p>
-                    <p className="mt-2 text-sm font-medium">
-                      {typeof value === "number"
-                        ? Number(value).toFixed(4)
-                        : String(value ?? "—")}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Panel>
-
-        <Panel eyebrow="Señales" title="Distribución de riesgo almacenado">
-          <div className="space-y-5 p-5">
-            {distribution.map((item) => (
-              <div key={item.level}>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-sm text-[#002930]/62">
-                    {riskLabels[item.level]}
-                  </span>
-                  <span className="text-sm font-medium">{item.count}</span>
-                </div>
-                <div className="mt-2 h-px bg-[#002930]/12">
-                  <div
-                    className="h-px bg-[#AC4A00]"
-                    style={{ width: `${Math.min(100, item.percent)}%` }}
-                  />
-                </div>
-                <p className="mt-1 text-[10px] text-[#002930]/32">
-                  {item.percent.toFixed(1)}%
-                </p>
-              </div>
-            ))}
-
-            <p className="border-t border-[#002930]/12 pt-5 text-xs leading-5 text-[#002930]/45">
-              Esta distribución describe probabilidades almacenadas en las
-              trayectorias. No equivale a una tasa real de deserción ni debe
-              interpretarse como resultado educativo observado.
-            </p>
+          <div className="bg-[#F8F0AF] p-5">
+            <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/40">Eventos pendientes</p>
+            <p className="mt-2 text-lg font-medium">{retraining?.events_pending ?? "—"}</p>
           </div>
-        </Panel>
-      </div>
-
-      <Panel className="mt-6" eyebrow="Arquitectura" title="Flujo de inferencia activo">
-        <div className="grid gap-px bg-[#002930]/12 md:grid-cols-2 xl:grid-cols-6">
-          <FlowStep index="01" icon={<Database className="h-5 w-5" />} title="PostgreSQL" text="Datos académicos y contextuales." />
-          <FlowStep index="02" icon={<Activity className="h-5 w-5" />} title="NestJS" text="Construye el contrato de features." />
-          <FlowStep index="03" icon={<BrainCircuit className="h-5 w-5" />} title="FastAPI" text="Orquesta la inferencia del modelo." />
-          <FlowStep index="04" icon={<Sparkles className="h-5 w-5" />} title="Modelo" text="Estima probabilidad y factores." />
-          <FlowStep index="05" icon={<ShieldCheck className="h-5 w-5" />} title="Persistencia" text="Guarda versión e historial." />
-          <FlowStep index="06" icon={<GraduationCap className="h-5 w-5" />} title="Revisión humana" text="Contextualiza y decide el acompañamiento." />
+          <div className="bg-[#F8F0AF] p-5">
+            <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/40">Reportes nuevos / umbral</p>
+            <p className="mt-2 text-lg font-medium">{retraining ? `${retraining.new_finalized_reports}/${retraining.min_new_finalized_reports}` : "—"}</p>
+          </div>
+          <div className="bg-[#F8F0AF] p-5">
+            <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/40">Último candidato</p>
+            <p className="mt-2 truncate text-sm font-medium">{retraining?.latest_candidate?.version || retraining?.last_run?.status || "Sin candidato real"}</p>
+          </div>
+        </div>
+        <div className="border-t border-[#002930]/10 px-5 py-4 text-xs leading-5 text-[#002930]/60">
+          {retraining?.policy || "Los eventos operativos se acumulan y el modelo solo se reentrena cuando existen resultados institucionales confirmados y suficientes. Ningún candidato se promueve automáticamente a producción."}
         </div>
       </Panel>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Panel eyebrow="Aprendizaje" title="Champion → Challenger">
-          <div className="p-5">
-            <div className="flex items-start gap-4">
-              <GitCompareArrows className="mt-0.5 h-5 w-5 shrink-0 text-[#AC4A00]" />
-              <div>
-                <p className="text-sm font-medium">Reentrenamiento gobernado</p>
-                <p className="mt-2 text-xs leading-5 text-[#002930]/48">
-                  El modelo no aprende de sus propias predicciones. Solo los
-                  outcomes educativos reales posteriores pueden convertirse en
-                  etiquetas de entrenamiento. Un modelo challenger debe superar
-                  métricas y controles de fairness antes de reemplazar al champion.
-                </p>
-              </div>
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.08fr_.92fr]">
+        <Panel eyebrow="Priorización" title="Instituciones por nivel de riesgo">
+          <div className="border-b border-[#002930]/12 p-4">
+            <div className="flex flex-wrap gap-2">
+              {(["TODOS", "ALTO", "MEDIO", "BAJO"] as const).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setRiskFilter(level)}
+                  className={
+                    "min-h-9 border px-3 text-xs font-medium transition " +
+                    (riskFilter === level
+                      ? "border-[#002930] bg-[#002930] text-white"
+                      : "border-[#002930]/14 hover:border-[#002930]/40")
+                  }
+                >
+                  {level === "TODOS" ? "Todos" : riskMeta[level].label}
+                </button>
+              ))}
             </div>
           </div>
-        </Panel>
 
-        <Panel eyebrow="Acceso" title="Trabajar con predicciones">
-          <div className="divide-y divide-[#002930]/12">
-            <Link
-              href="/core/students"
-              className="group flex items-center justify-between gap-6 px-5 py-5 transition hover:bg-white/25"
-            >
-              <div>
-                <p className="text-sm font-medium">Abrir trayectorias</p>
-                <p className="mt-1 text-xs text-[#002930]/45">
-                  Cada estudiante incluye una pestaña de IA con predicción,
-                  factores, versión e historial.
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/core/reports"
-              className="group flex items-center justify-between gap-6 px-5 py-5 transition hover:bg-white/25"
-            >
-              <div>
-                <p className="text-sm font-medium">Analizar operación</p>
-                <p className="mt-1 text-xs text-[#002930]/45">
-                  Contrasta riesgo, alertas e intervenciones sin convertir la
-                  probabilidad en una decisión automática.
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
-            </Link>
+          <div className="divide-y divide-[#002930]/10">
+            {filtered.map((item) => {
+              const meta = riskMeta[item.riesgo_predicho];
+              return (
+                <Link
+                  key={item.codigo_dane_establecimiento}
+                  href={`/core/ai/${encodeURIComponent(item.codigo_dane_establecimiento)}`}
+                  className="group grid gap-4 px-5 py-5 transition hover:bg-white/25 md:grid-cols-[1fr_8rem_8rem_auto] md:items-center"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[#002930]">
+                      {item.institucion_educativa}
+                    </p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.13em] text-[#002930]/38">
+                      DANE {item.codigo_dane_establecimiento} · {item.zona_institucion || "Zona no informada"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/35">Nivel</p>
+                    <p className={`mt-1 text-sm font-medium ${meta.text}`}>{meta.label}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.13em] text-[#002930]/35">P(ALTO)</p>
+                    <p className="mt-1 text-sm font-medium">{pct(item.prob_alto)}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-[#AC4A00] transition-transform group-hover:translate-x-1" />
+                </Link>
+              );
+            })}
           </div>
         </Panel>
+
+        <div className="space-y-6">
+          <Panel eyebrow="Modelo" title="Trazabilidad del modelo activo">
+            <div className="grid gap-px bg-[#002930]/12 sm:grid-cols-2">
+              <Meta label="Versión" value={modelVersion} />
+              <Meta label="Algoritmo" value={modelName(model)} />
+              <Meta
+                label="Variables"
+                value={String(model?.feature_columns?.length ?? model?.features?.length ?? "—")}
+              />
+              <Meta
+                label="Años de entrenamiento"
+                value={model?.trained_years?.length ? `${Math.min(...model.trained_years)}–${Math.max(...model.trained_years)}` : "—"}
+              />
+            </div>
+          </Panel>
+
+          <Panel eyebrow="Gobierno" title="Gates empresariales">
+            <div className="divide-y divide-[#002930]/10">
+              {Object.keys(gates).length > 0 ? (
+                Object.entries(gates).map(([key, passed]) => (
+                  <div key={key} className="flex items-center justify-between px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      {passed ? (
+                        <ShieldCheck className="h-4 w-4 text-[#2f6a5f]" />
+                      ) : (
+                        <Activity className="h-4 w-4 text-[#AC4A00]" />
+                      )}
+                      <span className="text-xs font-medium capitalize">{key.replaceAll("_", " ")}</span>
+                    </div>
+                    <span className={passed ? "text-xs text-[#2f6a5f]" : "text-xs text-[#AC4A00]"}>
+                      {passed ? "Cumple" : "Pendiente"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="px-5 py-6 text-sm text-[#002930]/45">Sin gates informados.</p>
+              )}
+            </div>
+          </Panel>
+
+          <InlineNotice tone="info" title="Arquitectura integrada">
+            Next.js consulta NestJS y NestJS consulta FastAPI mediante una credencial de servicio privada. La API key de IA nunca se envía al navegador.
+          </InlineNotice>
+        </div>
       </div>
 
-      <div className="mt-6">
-        <InlineNotice tone="info" title="IA responsable">
-          SIEDES presenta señales para priorizar revisión. La probabilidad no es
-          un diagnóstico ni una sentencia de deserción. El autorreconocimiento
-          étnico y otras variables sensibles deben utilizarse para contexto y
-          auditoría de equidad, no como penalización automática.
-        </InlineNotice>
+      <div className="mt-6 border-l-2 border-[#AC4A00] bg-[#F8F0AF] px-5 py-4">
+        <div className="flex items-start gap-3">
+          <BrainCircuit className="mt-0.5 h-4 w-4 shrink-0 text-[#AC4A00]" />
+          <p className="text-xs leading-5 text-[#002930]/52">
+            El nivel de riesgo es una herramienta de priorización institucional. Las acciones de seguimiento deben considerar contexto pedagógico, territorial, cultural y evidencia complementaria antes de intervenir.
+          </p>
+        </div>
       </div>
     </CorePage>
   );
 }
 
-function MetaItem({
-  label,
-  value,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
+function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`bg-[#F8F0AF] p-5 ${className}`}>
-      <p className="text-[9px] uppercase tracking-[0.15em] text-[#002930]/36">
-        {label}
-      </p>
+    <div className="bg-[#F8F0AF] p-5">
+      <p className="text-[9px] uppercase tracking-[0.14em] text-[#002930]/35">{label}</p>
       <p className="mt-2 break-words text-sm font-medium">{value}</p>
     </div>
-  );
-}
-
-function FlowStep({
-  index,
-  icon,
-  title,
-  text,
-}: {
-  index: string;
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <article className="bg-[#F8F0AF] p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-[#AC4A00]">{icon}</span>
-        <span className="text-[9px] tracking-[0.16em] text-[#002930]/28">
-          {index}
-        </span>
-      </div>
-      <h3 className="mt-7 text-sm font-medium">{title}</h3>
-      <p className="mt-2 text-xs leading-5 text-[#002930]/45">{text}</p>
-    </article>
   );
 }

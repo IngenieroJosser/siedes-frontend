@@ -295,9 +295,9 @@ export default function DashboardCore() {
           note="Trayectorias disponibles"
         />
         <StatCard
-          label="Riesgo alto o crítico"
+          label="Señal operativa alta"
           value={metrics.highRisk}
-          note={`${metrics.criticalRisk} en nivel crítico`}
+          note="Campo operativo heredado; no corresponde al modelo institucional"
           accent="orange"
         />
         <StatCard
@@ -533,8 +533,8 @@ export default function DashboardCore() {
           <ActionCard
             icon={<BrainCircuit className="h-5 w-5" />}
             index="04"
-            title="IA predictiva"
-            description="Consultar modelo, estado y trazabilidad."
+            title="Riesgo institucional"
+            description="Priorizar colegios, revisar factores y trazabilidad."
             href="/core/ai"
           />
           <ActionCard

@@ -45,7 +45,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/core/ai",
-    label: "IA predictiva",
+    label: "Riesgo institucional",
     description: "Modelo y trazabilidad",
     icon: BrainCircuit,
   },
@@ -68,7 +68,7 @@ const SECTION_META: Record<string, { eyebrow: string; title: string }> = {
   "/core/students": { eyebrow: "Trayectorias", title: "Estudiantes" },
   "/core/alerts": { eyebrow: "Señales", title: "Alertas tempranas" },
   "/core/interventions": { eyebrow: "Acompañamiento", title: "Intervenciones" },
-  "/core/ai": { eyebrow: "Inteligencia artificial", title: "IA predictiva" },
+  "/core/ai": { eyebrow: "Inteligencia artificial", title: "Riesgo institucional" },
   "/core/reports": { eyebrow: "Análisis", title: "Reportes" },
   "/core/settings": { eyebrow: "Gobernanza", title: "Configuración" },
 };

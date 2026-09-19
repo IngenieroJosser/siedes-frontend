@@ -1,9 +1,11 @@
 import { api } from "@/lib/api";
 import {
+  AiDashboardSummary,
   AiHealthResponse,
+  AiInstitutionFactor,
+  AiInstitutionRisk,
   AiModelMetadata,
-  AiPredictionHistoryItem,
-  AiStudentPrediction,
+  RetrainingStatus,
 } from "@/lib/prediction-types";
 
 type ApiEnvelope<T> =
@@ -24,41 +26,55 @@ function unwrap<T>(response: ApiEnvelope<T>): T {
   ) {
     return (response as { data: T }).data;
   }
-
   return response as T;
 }
 
 export async function getAiHealth(): Promise<AiHealthResponse> {
-  const response = await api.get<ApiEnvelope<AiHealthResponse>>(
-    "/prediction/health"
+  return unwrap(
+    await api.get<ApiEnvelope<AiHealthResponse>>("/prediction/health")
   );
-  return unwrap(response);
 }
 
 export async function getAiModel(): Promise<AiModelMetadata> {
-  const response = await api.get<ApiEnvelope<AiModelMetadata>>(
-    "/prediction/model"
+  return unwrap(
+    await api.get<ApiEnvelope<AiModelMetadata>>("/prediction/model")
   );
-  return unwrap(response);
 }
 
-export async function predictStudentRisk(
-  studentId: string,
-  persist = true
-): Promise<AiStudentPrediction> {
-  const response = await api.post<ApiEnvelope<AiStudentPrediction>>(
-    `/prediction/students/${encodeURIComponent(studentId)}?persist=${String(
-      persist
-    )}`
+export async function getAiDashboard(): Promise<AiDashboardSummary> {
+  return unwrap(
+    await api.get<ApiEnvelope<AiDashboardSummary>>("/prediction/dashboard")
   );
-  return unwrap(response);
 }
 
-export async function getStudentPredictionHistory(
-  studentId: string
-): Promise<AiPredictionHistoryItem[]> {
-  const response = await api.get<ApiEnvelope<AiPredictionHistoryItem[]>>(
-    `/prediction/students/${encodeURIComponent(studentId)}/history`
+export async function getInstitutionRisks(): Promise<AiInstitutionRisk[]> {
+  return unwrap(
+    await api.get<ApiEnvelope<AiInstitutionRisk[]>>("/prediction/institutions")
   );
-  return unwrap(response);
+}
+
+export async function getInstitutionRiskHistory(
+  schoolCode: string
+): Promise<AiInstitutionRisk[]> {
+  return unwrap(
+    await api.get<ApiEnvelope<AiInstitutionRisk[]>>(
+      `/prediction/institutions/${encodeURIComponent(schoolCode)}/history`
+    )
+  );
+}
+
+export async function getInstitutionRiskFactors(
+  schoolCode: string
+): Promise<AiInstitutionFactor[]> {
+  return unwrap(
+    await api.get<ApiEnvelope<AiInstitutionFactor[]>>(
+      `/prediction/institutions/${encodeURIComponent(schoolCode)}/factors`
+    )
+  );
+}
+
+export async function getRetrainingStatus(): Promise<RetrainingStatus> {
+  return unwrap(
+    await api.get<ApiEnvelope<RetrainingStatus>>("/ml/retraining/status")
+  );
 }

@@ -13,6 +13,7 @@ import {
 import { getAlerts } from "@/services/alerts";
 import { getStudents } from "@/services/students";
 import { Alert, Student } from "@/lib/type";
+import { createInstitutionReport, ObservedRiskLevel } from "@/services/reports";
 import {
   CorePage,
   CorePageHeader,
@@ -75,6 +76,18 @@ export default function ReportsPage() {
     end: new Date().toISOString().split("T")[0],
   });
   const [institutionFilter, setInstitutionFilter] = useState("all");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const [learningReport, setLearningReport] = useState({
+    institucionId: "",
+    anio: new Date().getFullYear(),
+    periodo: `${new Date().getFullYear()}-${new Date().getMonth() < 6 ? "I" : "II"}`,
+    fechaCorte: new Date().toISOString().split("T")[0],
+    matriculaCorte: 0,
+    desertoresConfirmados: 0,
+    nivelRiesgoObservado: "BAJO" as ObservedRiskLevel,
+    observaciones: "",
+  });
 
   const loadData = async () => {
     try {
@@ -215,6 +228,32 @@ export default function ReportsPage() {
       ? (stats.studentsWithAlert / stats.totalStudents) * 100
       : 0;
 
+  const submitLearningReport = async () => {
+    if (!learningReport.institucionId) {
+      setReportMessage("Selecciona una institución.");
+      return;
+    }
+    if (learningReport.matriculaCorte <= 0 || learningReport.desertoresConfirmados < 0 || learningReport.desertoresConfirmados > learningReport.matriculaCorte) {
+      setReportMessage("Verifica matrícula y desertores confirmados.");
+      return;
+    }
+    try {
+      setReportSubmitting(true);
+      setReportMessage(null);
+      await createInstitutionReport({
+        ...learningReport,
+        fechaCorte: new Date(`${learningReport.fechaCorte}T23:59:59`).toISOString(),
+        fuente: "CIERRE_INSTITUCIONAL_SIEDES",
+        finalizado: true,
+      });
+      setReportMessage("Cierre institucional registrado. El evento fue enviado al ciclo de aprendizaje continuo; el reentrenamiento se ejecutará solo cuando existan suficientes etiquetas maduras.");
+    } catch (err) {
+      setReportMessage(err instanceof Error ? err.message : "No fue posible registrar el cierre institucional.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   const exportCsv = () => {
     const rows = [
       [
@@ -308,6 +347,66 @@ export default function ReportsPage() {
           </>
         }
       />
+
+      <Panel className="mt-8" eyebrow="Aprendizaje continuo" title="Cierre institucional etiquetado">
+        <div className="border-b border-[#002930]/10 px-5 py-4 text-xs leading-5 text-[#002930]/60">
+          Este cierre aporta la etiqueta supervisada del modelo institucional. Crear estudiantes, alertas e intervenciones actualiza el contexto, pero solo un resultado institucional confirmado puede habilitar un nuevo entrenamiento candidato.
+        </div>
+        <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="xl:col-span-2">
+            <FieldLabel htmlFor="learning-institution">Institución</FieldLabel>
+            <select
+              id="learning-institution"
+              className={inputClass}
+              value={learningReport.institucionId}
+              onChange={(e) => setLearningReport((v) => ({ ...v, institucionId: e.target.value }))}
+            >
+              <option value="">Seleccionar institución</option>
+              {institutions.filter((i) => i.id !== "all").map((institution) => (
+                <option key={institution.id} value={institution.id}>{institution.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-year">Año</FieldLabel>
+            <input id="learning-year" type="number" className={inputClass} value={learningReport.anio} onChange={(e) => setLearningReport((v) => ({ ...v, anio: Number(e.target.value) }))} />
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-period">Periodo</FieldLabel>
+            <input id="learning-period" className={inputClass} value={learningReport.periodo} onChange={(e) => setLearningReport((v) => ({ ...v, periodo: e.target.value }))} />
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-cutoff">Fecha de corte</FieldLabel>
+            <input id="learning-cutoff" type="date" className={inputClass} value={learningReport.fechaCorte} onChange={(e) => setLearningReport((v) => ({ ...v, fechaCorte: e.target.value }))} />
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-enrollment">Matrícula al corte</FieldLabel>
+            <input id="learning-enrollment" type="number" min={1} className={inputClass} value={learningReport.matriculaCorte || ""} onChange={(e) => setLearningReport((v) => ({ ...v, matriculaCorte: Number(e.target.value) }))} />
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-dropouts">Desertores confirmados</FieldLabel>
+            <input id="learning-dropouts" type="number" min={0} className={inputClass} value={learningReport.desertoresConfirmados} onChange={(e) => setLearningReport((v) => ({ ...v, desertoresConfirmados: Number(e.target.value) }))} />
+          </div>
+          <div>
+            <FieldLabel htmlFor="learning-risk">Nivel observado</FieldLabel>
+            <select id="learning-risk" className={inputClass} value={learningReport.nivelRiesgoObservado} onChange={(e) => setLearningReport((v) => ({ ...v, nivelRiesgoObservado: e.target.value as ObservedRiskLevel }))}>
+              <option value="BAJO">Bajo</option>
+              <option value="MEDIO">Medio</option>
+              <option value="ALTO">Alto</option>
+            </select>
+          </div>
+          <div className="md:col-span-2 xl:col-span-4">
+            <FieldLabel htmlFor="learning-notes">Observaciones</FieldLabel>
+            <textarea id="learning-notes" className={inputClass} value={learningReport.observaciones} onChange={(e) => setLearningReport((v) => ({ ...v, observaciones: e.target.value }))} />
+          </div>
+          <div className="md:col-span-2 xl:col-span-4 flex flex-wrap items-center gap-4">
+            <button type="button" onClick={submitLearningReport} disabled={reportSubmitting} className="min-h-11 bg-[#002930] px-5 text-sm font-medium text-white disabled:opacity-50">
+              {reportSubmitting ? "Registrando..." : "Registrar cierre y enviar a aprendizaje"}
+            </button>
+            {reportMessage && <p className="max-w-3xl text-xs leading-5 text-[#002930]/65">{reportMessage}</p>}
+          </div>
+        </div>
+      </Panel>
 
       <Panel className="mt-8" eyebrow="Período" title="Parámetros del reporte">
         <div className="grid gap-4 p-5 md:grid-cols-3">
